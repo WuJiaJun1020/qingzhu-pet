@@ -1,0 +1,18 @@
+{
+  "name": "qingzhu-pet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "青竹桌宠：桌面角色动画、交互测试与透明素材处理工具",
+  "main": "app/main.cjs",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/WuJiaJun1020/qingzhu-pet.git" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/model.test.cjs tests/drag.test.cjs tests/assets.test.cjs",
+    "verify": "electron . --verify --board=black",
+    "test:python": "python -m unittest discover -s tests -p *_test.py"
+  },
+  "dependencies": { "koffi": "3.3.2" },
+  "devDependencies": { "electron": "38.8.6" }
+}

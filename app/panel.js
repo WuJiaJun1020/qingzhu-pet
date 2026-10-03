@@ -1,0 +1,60 @@
+'use strict';
+const api = window.petAPI, $ = id => document.getElementById(id);
+let state, current = 0, scrubbing = false;
+const run = p => p.catch(e => { $('error').textContent = e.message; $('error').hidden = false; });
+const change = patch => run(api.configure(patch));
+function progress(frame) {
+  current = frame;
+  if (!state) return;
+  if (!scrubbing) $('seek').value = frame;
+  $('frame').textContent = `${frame + 1} / ${state.animation.frames.length}`;
+  const time = state.animation.frames.slice(0,frame).reduce((s,f) => s+f.durationMs,0)/1000;
+  $('time').textContent = `${time.toFixed(2)} s`;
+}
+function accept(s) {
+  state = s;
+  if (!$('action').options.length) for (const a of s.actions) { const option = document.createElement('option'); option.value = a.id; option.textContent = a.title; $('action').appendChild(option); }
+  $('action').value = s.settings.action;
+  $('play').textContent = s.settings.playing ? '暂停' : '播放';
+  $('loop').checked = s.settings.loop;
+  $('loop').disabled = s.settings.autoPlay;
+  $('auto-play').checked = s.settings.autoPlay;
+  $('probability').value = s.settings.actionProbability;
+  $('action-counts').textContent = '本次自动触发：' + s.actions.filter(a=>a.role !== 'idle').map(a=>`${a.title} ${s.actionCounts[a.id] || 0} 次`).join(' · ');
+  $('probability-value').textContent = `${s.settings.actionProbability}%`;
+  $('clean-noise').checked = s.settings.cleanNoise;
+  $('edge-blend').checked = s.settings.edgeBlend;
+  $('clean-noise').disabled = !s.animation.frames.every(f=>f.cleanedFile);
+  $('edge-blend').disabled = !s.animation.frames.every(f=>f.edgeMaskFile);
+  $('clean-noise').title = $('clean-noise').disabled ? '这段动画没有单独的杂色净化版本' : '切换净化与原始透明帧';
+  $('edge-blend').title = $('edge-blend').disabled ? '这段动画已去除纯色背景，不施加环境渐隐' : '柔化环境边界并保护主体';
+  $('scale').value = Math.round(s.settings.scale * 100);
+  $('scale-value').textContent = `${Math.round(s.settings.scale * 100)}%`;
+  $('visible').textContent = s.settings.visible ? '隐藏桌宠' : '显示桌宠';
+  $('seek').max = s.animation.frames.length - 1;
+  const a = s.actions.find(a => a.id === s.settings.action);
+  $('info').textContent = `${a.width} × ${a.height} · ${a.count} 帧 · ${(a.duration/1000).toFixed(2)} s · ${(a.count*1000/a.duration).toFixed(0)} fps`;
+  progress(s.settings.frame);
+}
+api.onState(accept); api.onProgress(progress); run(api.snapshot().then(accept));
+$('action').onchange = e => change({ action: e.target.value, frame: 0, playing: true, autoPlay: false });
+$('auto-play').onchange = e => change(e.target.checked ? {autoPlay: true, action: state.idleId, frame: 0, playing: true} : {autoPlay: false});
+$('probability').oninput = e => change({actionProbability: Number(e.target.value)});
+$('play').onclick = () => change({ playing: !state.settings.playing });
+$('restart').onclick = () => change({ frame: 0, playing: true });
+$('loop').onchange = e => change({ loop: e.target.checked });
+$('clean-noise').onchange = e => change({ cleanNoise: e.target.checked });
+$('edge-blend').onchange = e => change({ edgeBlend: e.target.checked });
+$('seek').onpointerdown = () => scrubbing = true;
+$('seek').oninput = e => change({ frame: Number(e.target.value), playing: false });
+$('seek').onchange = () => scrubbing = false;
+$('seek').onpointercancel = () => scrubbing = false;
+$('prev').onclick = () => change({ frame: current - 1, playing: false });
+$('next').onclick = () => change({ frame: current + 1, playing: false });
+$('scale').oninput = e => change({ scale: Number(e.target.value)/100 });
+for (const button of document.querySelectorAll('[data-size]')) button.onclick = () => change({ scale: Number(button.dataset.size) });
+$('visible').onclick = () => change({ visible: !state.settings.visible });
+$('board').onclick = () => run(api.board());
+$('quit').onclick = () => run(api.quit());
+$('theme').onclick = () => { const light = document.body.dataset.theme !== 'light'; document.body.dataset.theme = light ? 'light' : 'dark'; $('theme').textContent = light ? '深色' : '浅色'; };
+document.addEventListener('keydown', e => { if(e.target.matches('input,select')) return; if(e.code === 'Space'){ e.preventDefault(); $('play').click(); } else if(e.key === 'ArrowLeft') $('prev').click(); else if(e.key === 'ArrowRight') $('next').click(); });
