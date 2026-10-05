@@ -1,0 +1,894 @@
+{
+  "version": 1,
+  "releaseTag": "characters-20261005",
+  "packs": [
+    {
+      "id": "hanli",
+      "name": "韩立",
+      "sha256": "432187716a36039b4035ce872736722c93e9ef8254e3d87a8caf4c086736ede1",
+      "bytes": 118238472,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/hanli-432187716a36.qzpet",
+      "actions": [
+        {
+          "id": "idle",
+          "title": "呼吸眨眼 · 待机",
+          "role": "idle",
+          "frames": 132
+        },
+        {
+          "id": "reading",
+          "title": "取书阅读",
+          "role": "action",
+          "frames": 481
+        },
+        {
+          "id": "bottle",
+          "title": "小绿瓶",
+          "role": "action",
+          "frames": 243
+        },
+        {
+          "id": "hug",
+          "title": "韩立与慕沛灵相拥",
+          "role": "action",
+          "frames": 226
+        },
+        {
+          "id": "swords",
+          "title": "御剑 · 飞剑",
+          "role": "action",
+          "frames": 328
+        },
+        {
+          "id": "idle-shake",
+          "title": "轻轻摇头 · 待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "idle-think",
+          "title": "思考 · 待机",
+          "role": "idle",
+          "frames": 158
+        },
+        {
+          "id": "grab",
+          "title": "空中被抓 · 拖动动作",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "drop",
+          "title": "抓取下落 · 松手",
+          "role": "interaction",
+          "frames": 39
+        }
+      ]
+    },
+    {
+      "id": "meining",
+      "name": "梅凝",
+      "sha256": "93845ed52189ff8c94237f37eb10e1d5a063cfa2383873379d72d7b3021add7b",
+      "bytes": 15281165,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/meining-93845ed52189.qzpet",
+      "actions": [
+        {
+          "id": "meining-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "meining-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "meining-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "meining-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "mocaihuan",
+      "name": "墨彩环",
+      "sha256": "142dee967d0b9995312155fd2f294e8b43d7e04bfecabd83c2a66e3c4abfd774",
+      "bytes": 18298395,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mocaihuan-142dee967d0b.qzpet",
+      "actions": [
+        {
+          "id": "mocaihuan-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "mocaihuan-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "mocaihuan-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "mocaihuan-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "mupeiling",
+      "name": "慕沛灵",
+      "sha256": "912ded93d2fbd09ea7945c5877c4a2bd5fa9c142f81b777159c27cd7944bcac6",
+      "bytes": 18609351,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mupeiling-912ded93d2fb.qzpet",
+      "actions": [
+        {
+          "id": "mupeiling-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "mupeiling-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "mupeiling-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "mupeiling-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "nangongwan",
+      "name": "南宫婉",
+      "sha256": "dad3380e044581ab63e13e9e5901268ce6a6b4224b07dd099c0c664fba983c7f",
+      "bytes": 15708918,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/nangongwan-dad3380e0445.qzpet",
+      "actions": [
+        {
+          "id": "nangongwan-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "nangongwan-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "nangongwan-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "nangongwan-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "yinyue",
+      "name": "银月",
+      "sha256": "a0384fa6a18a67dacf26b4be3ee01c772bf1fc49d7da0dd8f116a11069a2e537",
+      "bytes": 17742936,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yinyue-a0384fa6a18a.qzpet",
+      "actions": [
+        {
+          "id": "yinyue-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "yinyue-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "yinyue-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "yinyue-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "yuanyao",
+      "name": "元瑶",
+      "sha256": "fd64f5a02a05b6a74790eb04d83ab1b582f137ce0d160bb61a855c7d22307337",
+      "bytes": 16203167,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yuanyao-fd64f5a02a05.qzpet",
+      "actions": [
+        {
+          "id": "yuanyao-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "yuanyao-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "yuanyao-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "yuanyao-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "ziling",
+      "name": "紫灵",
+      "sha256": "2b95082436685d856482f14529d6bea6312209ed11dd062b0e4ee8f06b9b37b0",
+      "bytes": 16667154,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/ziling-2b9508243668.qzpet",
+      "actions": [
+        {
+          "id": "ziling-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "ziling-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "ziling-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "ziling-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "chenqiaoqian",
+      "name": "陈巧倩",
+      "sha256": "6973135f6aab6afcb4946abd5342c9bc0a7f68d86bc5a14eac738c01c0172563",
+      "bytes": 14145914,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/chenqiaoqian-6973135f6aab.qzpet",
+      "actions": [
+        {
+          "id": "chenqiaoqian-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "chenqiaoqian-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "chenqiaoqian-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "chenqiaoqian-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "dongxuaner",
+      "name": "董萱儿",
+      "sha256": "1c9e3ebca3067a81064b7eea30aa7f235cd08198aa3dcb3cda2ef14dfae30b2b",
+      "bytes": 17423418,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/dongxuaner-1c9e3ebca306.qzpet",
+      "actions": [
+        {
+          "id": "dongxuaner-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "dongxuaner-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "dongxuaner-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "dongxuaner-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "fanjingmei",
+      "name": "范静梅",
+      "sha256": "db30c20ed5788cfd1ae8ad2ddcf92c63b6157efc4dfab4dc10b0d1bbae507935",
+      "bytes": 16798058,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/fanjingmei-db30c20ed578.qzpet",
+      "actions": [
+        {
+          "id": "fanjingmei-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "fanjingmei-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "fanjingmei-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "fanjingmei-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "gongsunxing",
+      "name": "公孙杏",
+      "sha256": "5c773d6a49ecd30a0f9a3e829444d5ed5bbeed06e422d0696932e1d7f4772be2",
+      "bytes": 15224165,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/gongsunxing-5c773d6a49ec.qzpet",
+      "actions": [
+        {
+          "id": "gongsunxing-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "gongsunxing-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "gongsunxing-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "gongsunxing-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "hanyunzhi",
+      "name": "菡云芝",
+      "sha256": "bab99240eedf1b31cc6cf629966a620afd00f992014153ccace43024e1fdca84",
+      "bytes": 16975677,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/hanyunzhi-bab99240eedf.qzpet",
+      "actions": [
+        {
+          "id": "hanyunzhi-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "hanyunzhi-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "hanyunzhi-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "hanyunzhi-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "liyingning",
+      "name": "李缨宁",
+      "sha256": "7763aa794ec30cb82e7586058cc7c4a008925e34aacb865ef6850e90442fdd71",
+      "bytes": 14590614,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/liyingning-7763aa794ec3.qzpet",
+      "actions": [
+        {
+          "id": "liyingning-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "liyingning-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "liyingning-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "liyingning-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "lingyuling",
+      "name": "凌玉灵",
+      "sha256": "9e410d85e6ccfb15a1a8d8b6491e50faa9c31c1f539887d6e5ac53c7d98ae349",
+      "bytes": 14365812,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/lingyuling-9e410d85e6cc.qzpet",
+      "actions": [
+        {
+          "id": "lingyuling-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "lingyuling-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "lingyuling-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "lingyuling-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "liuyu",
+      "name": "柳玉",
+      "sha256": "2ba285894bddf883c3d5f087f6b7a90c11111d1f996652b23fd0a3b8a36037ec",
+      "bytes": 15859575,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/liuyu-2ba285894bdd.qzpet",
+      "actions": [
+        {
+          "id": "liuyu-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "liuyu-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "liuyu-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "liuyu-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "mulanshengnv",
+      "name": "慕兰圣女",
+      "sha256": "75e8c816b00d75935f43ad7d6ac25e63aba1430134aff161fb5297915c508416",
+      "bytes": 18554204,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mulanshengnv-75e8c816b00d.qzpet",
+      "actions": [
+        {
+          "id": "mulanshengnv-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "mulanshengnv-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "mulanshengnv-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "mulanshengnv-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "nangongque",
+      "name": "南宫阙",
+      "sha256": "039fef3461529c2bb7bd59d7366c0af3ab6b36a4dc231f312375dd9d0f37e21f",
+      "bytes": 15268380,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/nangongque-039fef346152.qzpet",
+      "actions": [
+        {
+          "id": "nangongque-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "nangongque-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "nangongque-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "nangongque-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "songyu",
+      "name": "宋玉",
+      "sha256": "a49106463c1b8ffa63714b1a34c306834eebfb6c819ab72b2a79ab2a3c474b38",
+      "bytes": 16454208,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/songyu-a49106463c1b.qzpet",
+      "actions": [
+        {
+          "id": "songyu-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "songyu-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "songyu-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "songyu-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "taifuren",
+      "name": "邰夫人",
+      "sha256": "0d75b819a1ef000a680f0e8936af102462418268217849e3c4e8577e30ba1d0d",
+      "bytes": 14896482,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/taifuren-0d75b819a1ef.qzpet",
+      "actions": [
+        {
+          "id": "taifuren-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "taifuren-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "taifuren-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "taifuren-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "wenfuren",
+      "name": "温夫人",
+      "sha256": "4446a653e32cd9f5ab48d4349bb7079c0a1b3803d74f4d033b1b2f005ecfb438",
+      "bytes": 15191330,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/wenfuren-4446a653e32c.qzpet",
+      "actions": [
+        {
+          "id": "wenfuren-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "wenfuren-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "wenfuren-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "wenfuren-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "wensiyue",
+      "name": "文思月",
+      "sha256": "e7b22bf1a441502d180ac2133775e5b7cfc7c498f1e85e6d3d2c405ad82d1f27",
+      "bytes": 18590674,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/wensiyue-e7b22bf1a441.qzpet",
+      "actions": [
+        {
+          "id": "wensiyue-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "wensiyue-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "wensiyue-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "wensiyue-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "xinruyin",
+      "name": "辛如音",
+      "sha256": "69817fb372ffa7a3f8a688f995e70ca5037b2327a9d5bf3d1af2e32797c461d6",
+      "bytes": 16148936,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/xinruyin-69817fb372ff.qzpet",
+      "actions": [
+        {
+          "id": "xinruyin-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "xinruyin-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "xinruyin-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "xinruyin-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "yanli",
+      "name": "妍丽",
+      "sha256": "6b80606c7092d6104e241723fced2fde46bccb3272821442ff06382c2f543c22",
+      "bytes": 15887965,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yanli-6b80606c7092.qzpet",
+      "actions": [
+        {
+          "id": "yanli-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "yanli-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "yanli-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "yanli-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "yanruyan",
+      "name": "燕如嫣",
+      "sha256": "a5c30887dc7d10824b961342f3801d8fa9b6d4622e93db342754062bd0954df9",
+      "bytes": 15425116,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yanruyan-a5c30887dc7d.qzpet",
+      "actions": [
+        {
+          "id": "yanruyan-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "yanruyan-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "yanruyan-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "yanruyan-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    },
+    {
+      "id": "zhuoruting",
+      "name": "卓如婷",
+      "sha256": "b9cedbf977f0c44d8d16106d1be13fde6ad0eb0a2217fc6448547f4e60d9ab4c",
+      "bytes": 22172794,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/zhuoruting-b9cedbf977f0.qzpet",
+      "actions": [
+        {
+          "id": "zhuoruting-idle",
+          "title": "待机",
+          "role": "idle",
+          "frames": 124
+        },
+        {
+          "id": "zhuoruting-grab",
+          "title": "空中拖拽",
+          "role": "interaction",
+          "frames": 56
+        },
+        {
+          "id": "zhuoruting-drop",
+          "title": "下落",
+          "role": "interaction",
+          "frames": 39
+        },
+        {
+          "id": "zhuoruting-wave",
+          "title": "挥手打招呼",
+          "role": "action",
+          "frames": 107
+        }
+      ]
+    }
+  ]
+}

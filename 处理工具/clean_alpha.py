@@ -65,6 +65,8 @@ def previews(manifest):
     print(str(folder),flush=True)
 
 def apply(manifest):
+    if manifest.get('frameVariant') == 'cleaned-v1':
+        raise RuntimeError('资源已经净化；请从原始素材重新导入，避免重复净化。')
     folder=ASSETS/'cleaned-v1'
     folder.mkdir(exist_ok=True)
     config={'algorithm_sha256':sha(Path(__file__)), 'parameters':PARAMETERS}
@@ -88,8 +90,8 @@ def apply(manifest):
             report['opaque_errors']+=int(np.any(cleaned[rgba[...,3]==255]!=rgba[rgba[...,3]==255],axis=1).sum())
             report['pixels_cleared']+=int(((rgba[...,3]>0)&(cleaned[...,3]==0)).sum())
             report['alpha_changed']+=int((rgba[...,3]!=cleaned[...,3]).sum())
-            name=source.name;path=target/name
-            Image.fromarray(cleaned).save(path,compress_level=6)
+            name=source.with_suffix('.png').name;path=target/name
+            Image.fromarray(cleaned).save(path,format='PNG',compress_level=6)
             frame['cleanedFile']=f"cleaned-v1/{action['id']}/{name}"
             frame['cleanedSha256']=sha(path)
             if (index+1)%48==0 or index+1==len(action['frames']):print(f"{action['id']}: {index+1}/{len(action['frames'])}",flush=True)

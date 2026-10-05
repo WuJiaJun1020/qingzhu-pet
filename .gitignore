@@ -19,3 +19,13 @@ assets/manifest.partial.json
 assets/**/导入记录.json
 assets/**/验证报告.json
 assets/**/算法.json
+
+# Original PNGs remain local; publish only active lossless WebP assets.
+assets/**/*.png
+!assets/app.png
+assets/**/*.tmp
+历史素材/
+历史代码/
+处理工具/bin/
+处理工具/预览/
+处理工具/边缘预览/

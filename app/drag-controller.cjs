@@ -1,6 +1,6 @@
 'use strict';
 // Drag movement is independent of the slower asynchronous alpha hit test.
-function createDragController({ getCursor, getBounds, clamp, move, onEnd, onStart = () => {}, onStop = () => {}, setTimer = setInterval, clearTimer = clearInterval }) {
+function createDragController({ getCursor, getBounds, clamp, move, onEnd, onStart = () => {}, onStop = () => {}, onMove = () => {}, setTimer = setInterval, clearTimer = clearInterval }) {
   let active = null, timer = null;
   function tick() {
     if (!active) return;
@@ -9,6 +9,7 @@ function createDragController({ getCursor, getBounds, clamp, move, onEnd, onStar
     if (pos.x === active.last.x && pos.y === active.last.y) return;
     move(pos.x, pos.y);
     active.last = pos;
+    onMove();
   }
   return {
     get active() { return active !== null; },

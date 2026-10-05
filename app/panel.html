@@ -1,1 +1,58 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; connect-src 'none'"><title>青竹桌宠</title><link rel="stylesheet" href="panel.css"></head><body><header><h1>青竹桌宠</h1><button id="board">背景板</button><button id="theme" aria-label="切换浅深色">浅色</button></header><p class="intro">直接放到桌面上，观察动画的透明与边缘效果。</p><section><label class="check"><input id="auto-play" type="checkbox">自动待机与随机动作</label><label for="probability">待机结束后触发动作 <span id="probability-value">30%</span></label><input id="probability" type="range" min="0" max="100" step="1" value="30"><p class="muted">每轮待机结束后抽签，其他动作按随机队列各播一次，避免重复；动作播完回到待机。0%始终待机，100%每轮触发。</p><p id="action-counts" class="muted"></p></section><label for="action">当前动画（选择后进入手动测试）</label><select id="action"></select><p id="info" class="muted"></p><div class="row"><button id="play" class="primary">暂停</button><button id="restart">从头播放</button><label class="check"><input id="loop" type="checkbox">循环</label></div><div class="row effects"><label class="check"><input id="clean-noise" type="checkbox">杂色净化</label><label class="check"><input id="edge-blend" type="checkbox">环境边缘渐隐</label></div><section><label for="seek">当前帧 <span id="frame"></span></label><input id="seek" type="range" min="0" max="1" value="0"><div class="row"><button id="prev">上一帧</button><button id="next">下一帧</button><span id="time" class="muted"></span></div><p class="muted">拖动进度条或逐帧查看会暂停播放。</p></section><section><label for="scale">大小 <span id="scale-value"></span></label><input id="scale" type="range" min="10" max="150" step="1"><div class="row"><button data-size=".5">50%</button><button data-size="1">100%</button><button id="visible">隐藏桌宠</button></div></section><p class="hint">拖动角色可移动位置，右键角色打开此面板。关闭面板后，仍可从系统托盘重新打开。</p><p id="error" role="alert" hidden></p><footer><span class="muted">独立运行 · 原始透明 PNG 帧</span><button id="quit">退出</button></footer><script src="panel.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; connect-src 'none'">
+  <title>青竹桌宠</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header><div><h1>青竹桌宠</h1><p class="intro">陪伴桌面，随心拖动</p></div><button id="theme" aria-label="切换浅深色">浅色</button></header>
+  <main>
+    <section class="card">
+      <div class="section-heading"><label for="character">当前角色</label><button id="manage-packs" class="small" aria-expanded="false" aria-controls="pack-manager">人物资源</button></div>
+      <select id="character"></select>
+      <p id="character-info" class="muted compact"></p>
+      <div id="pack-manager" hidden>
+        <p class="muted">按需下载，安装后可离线使用。</p><div id="pack-list"></div>
+        <p id="pack-progress" class="muted" role="status"></p>
+        <div class="row"><button id="pack-cancel" hidden>取消下载</button><button id="pack-import">从文件导入</button></div>
+      </div>
+    </section>
+    <section class="card">
+      <label for="scale">显示大小 <span id="scale-value"></span></label>
+      <input id="scale" type="range" min="10" max="100" step="1">
+      <div class="row size-row"><button data-size=".5" class="small">50%</button><button data-size="1" class="small">100% 原始大小</button><button id="visible" class="small">隐藏桌宠</button></div>
+      <p id="size-info" class="muted compact"></p>
+    </section>
+    <section class="card">
+      <label class="check toggle"><input id="auto-play" type="checkbox">自动待机与随机动作</label>
+      <label for="probability">动作触发概率 <span id="probability-value">30%</span></label>
+      <input id="probability" type="range" min="0" max="100" step="1" value="30">
+      <p id="auto-hint" class="muted compact"></p>
+    </section>
+    <section class="card">
+      <div class="section-heading"><label for="action">当前动画</label><span id="playback-mode" class="badge">自动播放</span></div>
+      <select id="action"></select>
+      <div class="row playback"><button id="play" class="primary">暂停</button><button id="restart">重播</button><button id="resume-auto">回到待机</button></div>
+    </section>
+    <details id="inspection" class="card">
+      <summary>动画检查 <span class="muted">逐帧 · 循环 · 统计</span></summary>
+      <div class="inspection-body">
+        <p id="info" class="muted"></p>
+        <div class="row"><label class="check"><input id="loop" type="checkbox">循环播放</label><label id="edge-blend-option" class="check"><input id="edge-blend" type="checkbox">环境边缘渐隐</label></div>
+        <label for="seek" class="seek-label">当前帧 <span id="frame"></span></label>
+        <input id="seek" type="range" min="0" max="1" value="0">
+        <div class="row"><button id="prev" class="small">上一帧</button><button id="next" class="small">下一帧</button><span id="time" class="muted"></span></div>
+        <p class="muted">逐帧或拖动进度会暂停播放；选择动画进入手动播放。</p>
+        <p id="action-counts" class="muted"></p>
+        <div class="row"><button id="edit-frame">修补透明帧</button><button id="board">打开背景检查板</button></div>
+      </div>
+    </details>
+  </main>
+  <p id="error" role="alert" hidden></p>
+  <footer><span class="muted">右键桌宠打开设置 · 托盘可找回</span><button id="quit" class="small">退出</button></footer>
+  <script src="panel.js"></script>
+</body>
+</html>

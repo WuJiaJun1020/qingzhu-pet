@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "format": "lossless WebP",
+  "sourceManifestSha256": "15a42f0433a6f2769450968a0f1f7ef875a6d79d72bf1a858aaff0f50b31726e",
+  "actions": 37,
+  "referencedImages": 8175,
+  "uniqueImages": 8138,
+  "beforeBytes": 820925542,
+  "afterBytes": 502476336,
+  "pixelErrors": 0,
+  "sourcesPreserved": true,
+  "applied": true,
+  "pngSourcesRechecked": 8175,
+  "excludedTrackedAssets": 2877,
+  "savedBytes": 318449206,
+  "savedPercent": 38.79,
+  "windowChecks": 72
+}

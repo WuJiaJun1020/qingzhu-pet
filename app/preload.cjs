@@ -1,7 +1,17 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('petAPI', {
+  frameEditor: {
+    open:()=>ipcRenderer.invoke('editor-open'),
+    list:()=>ipcRenderer.invoke('editor-list'),
+    load:(action,index)=>ipcRenderer.invoke('editor-load',action,index),
+    saveBatch:items=>ipcRenderer.invoke('editor-save-batch',items),
+    save:(action,index,baseSha,erased)=>ipcRenderer.invoke('editor-save',action,index,baseSha,erased)
+  },
   snapshot: () => ipcRenderer.invoke('snapshot'),
   configure: patch => ipcRenderer.invoke('configure', patch),
+  installCharacter: id => ipcRenderer.invoke('pack-install',id),
+  importCharacter: () => ipcRenderer.invoke('pack-import'),
+  cancelDownload: () => ipcRenderer.invoke('pack-cancel'),
   panel: () => ipcRenderer.invoke('panel'),
   board: () => ipcRenderer.invoke('board-open'),
   closeBoard: () => ipcRenderer.invoke('board-close'),

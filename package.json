@@ -1,18 +1,83 @@
 {
   "name": "qingzhu-pet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "青竹桌宠：桌面角色动画、交互测试与透明素材处理工具",
   "main": "app/main.cjs",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/WuJiaJun1020/qingzhu-pet.git" },
-  "engines": { "node": ">=22" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WuJiaJun1020/qingzhu-pet.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/model.test.cjs tests/drag.test.cjs tests/assets.test.cjs",
-    "verify": "electron . --verify --board=black",
-    "test:python": "python -m unittest discover -s tests -p *_test.py"
+    "test": "node --test tests/model.test.cjs tests/characters.test.cjs tests/drag.test.cjs tests/drag-animation.test.cjs tests/wave-assets.test.cjs tests/assets.test.cjs tests/character-packs.test.cjs tests/github-download.test.cjs tests/frame-edits.test.cjs tests/frame-brush.test.cjs",
+    "verify": "electron . --verify-characters --board=black",
+    "test:python": "python -m unittest discover -s tests -p *_test.py",
+    "verify:legacy": "electron . --verify --board=black",
+    "optimize:assets": "python 处理工具/optimize_assets.py",
+    "pack:characters": "python 处理工具/pack_characters.py --output-root release/build",
+    "verify:download": "electron . --verify-packs --board=black",
+    "verify:editor": "electron . --verify-editor",
+    "verify:soft-editor": "electron . --verify-editor --verify-soft-editor",
+    "dist:win": "electron-builder --win nsis --x64 --publish never"
   },
-  "dependencies": { "koffi": "3.3.2" },
-  "devDependencies": { "electron": "38.8.6" }
+  "dependencies": {
+    "koffi": "3.3.2"
+  },
+  "devDependencies": {
+    "electron": "38.8.6",
+    "electron-builder": "26.15.3"
+  },
+  "productName": "青竹桌宠",
+  "author": {
+    "name": "WuJiaJun1020",
+    "url": "https://github.com/WuJiaJun1020"
+  },
+  "build": {
+    "appId": "com.qingzhu.pet",
+    "productName": "青竹桌宠",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app/**/*",
+      "assets/**/*",
+      "package.json",
+      "LICENSE",
+      "ASSETS.md",
+      "!app/package.json",
+      "!assets/**/*.tmp"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/app.ico",
+      "artifactName": "qingzhu-pet-${version}-windows-${arch}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "青竹桌宠",
+      "runAfterFinish": false,
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ]
+    }
+  }
 }

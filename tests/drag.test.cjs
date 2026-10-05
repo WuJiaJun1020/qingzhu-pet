@@ -3,21 +3,22 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createDragController } = require('../app/drag-controller.cjs');
 test('native drag follows latest cursor at 8 ms, coalesces idle moves and flushes release', () => {
-  let point = { x: 100, y: 50 }, tick, interval, cleared = 0, ended = 0;
+  let point = { x: 100, y: 50 }, tick, interval, cleared = 0, ended = 0, moved = 0;
   const moves = [];
   const drag = createDragController({
     getCursor: () => point, getBounds: () => ({ x: 200, y: 300, width: 100, height: 150 }),
     clamp: (x,y) => ({ x: Math.min(350,x), y }),
-    move: (x,y) => moves.push({ x,y }), onEnd: () => ended++,
+    move: (x,y) => moves.push({ x,y }), onEnd: () => ended++, onMove: () => moved++,
     setTimer: (fn,ms) => { tick = fn; interval = ms; return 1; }, clearTimer: () => cleared++
   });
   drag.start(); assert.equal(interval,8);
-  tick(); assert.equal(moves.length,0);
-  point = { x:120,y:70 }; tick(); tick(); assert.deepEqual(moves,[{x:220,y:320}]);
-  point = { x:150,y:80 }; drag.stop(); assert.deepEqual(moves.at(-1),{x:250,y:330});
+  tick(); assert.equal(moves.length,0);assert.equal(moved,0);
+  point = { x:120,y:70 }; tick(); tick(); assert.deepEqual(moves,[{x:220,y:320}]);assert.equal(moved,1);
+  point = { x:150,y:80 }; drag.stop(); assert.deepEqual(moves.at(-1),{x:250,y:330});assert.equal(moved,2);
   assert.equal(ended,1); assert.equal(cleared,1); assert.equal(drag.active,false);
   tick(); drag.stop(); assert.equal(ended,1);
   drag.start(); point = { x:500,y:80 }; tick(); assert.equal(moves.at(-1).x,350);
+  const movesBeforeClamp=moved;point={x:600,y:80};tick();assert.equal(moved,movesBeforeClamp);
   drag.dispose(); const count = moves.length; tick(); assert.equal(moves.length,count); assert.equal(drag.active,false);
 });
 

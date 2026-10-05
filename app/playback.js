@@ -7,8 +7,10 @@ const run = p => p.catch(error);
 function at(time) {
   const frames = state.animation.frames, total = frames.reduce((s,f) => s + f.durationMs, 0);
   if ((state.settings.autoPlay || !state.settings.loop) && time >= total) return frames.length - 1;
-  let rest = Math.max(0, time) % total;
-  for (let i = 0; i < frames.length; i++) { if (rest < frames[i].durationMs) return i; rest -= frames[i].durationMs; }
+  const rest = Math.max(0, time) % total;
+  let boundary = 0;
+  // Use the same accumulation as accept() when seeking to a frame.
+  for (let i = 0; i < frames.length; i++) { boundary += frames[i].durationMs; if (rest < boundary) return i; }
   return 0;
 }
 function draw(now) {
@@ -33,17 +35,19 @@ function draw(now) {
 }
 async function loadFrame(url, frame) {
   const load = async src => { const img = new Image(); img.src = src; await img.decode(); return img; };
-  if (!frame.blendMaskUrl) return load(url);
-  const [image, mask] = await Promise.all([load(url), load(frame.blendMaskUrl)]);
+  const urls=[frame.repairMaskUrl,frame.blendMaskUrl].filter(Boolean);
+  if (!urls.length) return load(url);
+  const [image,...masks]=await Promise.all([load(url),...urls.map(load)]);
   const work = new OffscreenCanvas(image.naturalWidth, image.naturalHeight), paint = work.getContext('2d');
-  paint.drawImage(image, 0, 0); paint.globalCompositeOperation = 'destination-in'; paint.drawImage(mask, 0, 0);
+  paint.drawImage(image, 0, 0); paint.globalCompositeOperation = 'destination-in'; for(const mask of masks)paint.drawImage(mask,0,0);
   return work.transferToImageBitmap();
 }
+const frameKey=frame=>[frame.url,frame.repairMaskUrl||'',frame.blendMaskUrl||''].join('|');
 function warmStarts(starts) {
-  const wanted = new Set(starts.map(s => s.frame.url + (s.frame.blendMaskUrl || '')));
+  const wanted = new Set(starts.map(s => frameKey(s.frame)));
   for (const [key, promise] of startImages) if (!wanted.has(key)) { startImages.delete(key); promise.then(image => image.close?.()).catch(() => {}); }
   for (const s of starts) {
-    const key = s.frame.url + (s.frame.blendMaskUrl || '');
+    const key = frameKey(s.frame);
     if (!startImages.has(key)) { const p = loadFrame(s.frame.url, s.frame); startImages.set(key, p); p.catch(error); }
   }
 }
@@ -65,13 +69,14 @@ async function accept(next) {
   if (changed) {
     cache?.dispose();
     cache = new PetFrameCache(next.animation.frames, true, async (url, frame) => {
-      const first = startImages.get(url + (frame.blendMaskUrl || ''));
+      const first = startImages.get(frameKey(frame));
       return first ? createImageBitmap(await first) : loadFrame(url, frame);
     }, error);
   }
   elapsed = next.animation.frames.slice(0, next.settings.frame).reduce((s,f) => s + f.durationMs, 0);
   ending = false; drawn = -1;
-  try { await Promise.all(cache.prime(next.settings.frame)); } catch(e) { if(current === ticket) error(e); return; }
+  // Show the preloaded first frame immediately; future frames decode in parallel.
+  try { await cache.prime(next.settings.frame)[0]; } catch(e) { if(current === ticket) error(e); return; }
   if(current !== ticket) return;
   if (canvas.width !== next.animation.width || canvas.height !== next.animation.height) { canvas.width = next.animation.width; canvas.height = next.animation.height; }
   document.getElementById('error').hidden = true;

@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { defaults, configure, frameAt, nextAction, createActionScheduler } = require('../app/model.cjs');
+const { defaults, configure, frameDisplaySize, frameAt, nextAction, createActionScheduler } = require('../app/model.cjs');
 const actions = [{ id: 'idle', role: 'idle', frames: Array.from({ length: 362 }, () => ({ durationMs: 1000/24 })) }, { id: 'reading', frames: Array.from({ length: 481 }, () => ({ durationMs: 1000/24 })) }];
 test('frame boundaries, looping and end hold at 24 fps', () => {
   const frames = actions[0].frames;
@@ -16,7 +16,7 @@ test('invalid values cannot select unknown assets or create invalid frame/size',
   const before = defaults();
   assert.equal(configure(before, { action: '../bad', scale: NaN, frame: -900 }, actions).action, 'idle');
   assert.equal(configure(before, { frame: 9999 }, actions).frame, 361);
-  assert.equal(configure(before, { scale: 1000 }, actions).scale, 1.5);
+  assert.equal(configure(before, { scale: 1000 }, actions).scale, 1);
   assert.equal(configure(before, { scale: -1 }, actions).scale, .1);
   const next = configure({ ...before, frame: 350 }, { action: 'reading' }, actions);
   assert.equal(next.frame, 0); assert.equal(before.frame, 0);
@@ -84,4 +84,58 @@ test('three-action shuffled rounds cover every action once without boundary repe
   const chosen=Array.from({length:300},()=>schedule(s));
   for(let i=0;i<chosen.length;i+=3) assert.deepEqual([...chosen.slice(i,i+3)].sort(),['bottle','extra','reading']);
   for(let i=1;i<chosen.length;i++) assert.notEqual(chosen[i],chosen[i-1]);
+});
+
+test('three idle clips rotate at zero probability and never consume the special queue', () => {
+  const clips = [...actions, {id:'idle-shake',role:'idle',frames:[{}]}, {id:'idle-think',role:'idle',frames:[{}]}, {id:'bottle',frames:[{}]}];
+  const schedule = createActionScheduler(clips, () => .2);
+  let state = {...defaults(),actionProbability:0};
+  const chosen = [];
+  for(let i=0;i<12;i++) {const id=schedule(state);assert.notEqual(id,state.action);chosen.push(id);state={...state,action:id};}
+  for(let i=0;i<chosen.length;i+=3) assert.deepEqual(chosen.slice(i,i+3).sort(), ['idle','idle-shake','idle-think']);
+  state.actionProbability=100;
+  const first=schedule(state);assert.ok(['reading','bottle'].includes(first));
+  state.action=schedule({...state,action:first});assert.ok(clips.find(a=>a.id===state.action).role==='idle');
+  assert.notEqual(schedule(state),first);
+});
+
+test('each idle can trigger specials, special completion always selects an idle', () => {
+  const clips = [...actions, {id:'idle-shake',role:'idle',frames:[{}]}, {id:'idle-think',role:'idle',frames:[{}]}];
+  for(const id of ['idle','idle-shake','idle-think']) {
+    assert.equal(nextAction({...defaults(),action:id,actionProbability:100},clips,()=>0),'reading');
+    assert.ok(['idle','idle-shake','idle-think'].includes(nextAction({...defaults(),action:id,actionProbability:30},clips,()=>.9)));
+  }
+  const schedule=createActionScheduler(clips,()=>.4);
+  const returns=Array.from({length:6},()=>schedule({...defaults(),action:'reading',actionProbability:100}));
+  for(let i=0;i<returns.length;i+=3) assert.deepEqual(returns.slice(i,i+3).sort(),['idle','idle-shake','idle-think']);
+});
+
+test('saved oversize settings migrate to 100 percent and source pixels stay 1:1 at different display DPIs', () => {
+  assert.equal(configure({...defaults(),scale:1.5},{},actions).scale,1);
+  assert.equal(configure({...defaults(),scale:NaN},{},actions).scale,defaults().scale);
+  for(const scaleFactor of [1,1.25,2]) {
+    const display={scaleFactor,workArea:{width:1200,height:900}};
+    const full=frameDisplaySize({width:384,height:576},1,display);
+    assert.equal(full.width*scaleFactor,384);assert.equal(full.height*scaleFactor,576);
+    const half=frameDisplaySize({width:384,height:576},.5,display);
+    assert.equal(half.width*scaleFactor,192);assert.equal(half.height*scaleFactor,288);
+  }
+});
+
+
+test('fractional frame timings seek to every exact frame boundary', () => {
+  const timings = [[124,5000],[56,2000],[39,1000],[107,4000]];
+  const clips = timings.map(([count,total]) => Array.from({length:count}, () => ({durationMs:total/count})));
+  clips.push(Array.from({length:80}, (_,i) => ({durationMs:i%2 ? 37.7 : 30.1})));
+  for (const frames of clips) {
+    let elapsed = 0;
+    for (let i = 0; i < frames.length; i++) {
+      assert.equal(frameAt(elapsed,frames,false),i);
+      assert.equal(frameAt(elapsed,frames,true),i);
+      if(i) assert.equal(frameAt(elapsed-1e-7,frames,false),i-1);
+      elapsed += frames[i].durationMs;
+    }
+    assert.equal(frameAt(elapsed,frames,false),frames.length-1);
+    assert.equal(frameAt(elapsed,frames,true),0);
+  }
 });

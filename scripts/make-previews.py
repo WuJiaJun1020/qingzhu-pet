@@ -1,4 +1,5 @@
 """Generate README GIFs from current assets without modifying source PNGs."""
+import argparse
 import json
 from pathlib import Path
 
@@ -23,10 +24,14 @@ def render(action, frame):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--actions', nargs='+', default=['idle', 'reading', 'bottle', 'hug', 'swords'])
+    args = parser.parse_args()
     manifest = json.loads((ROOT / 'assets/manifest.json').read_text(encoding='utf-8-sig'))
     output = ROOT / 'docs/previews'
     output.mkdir(parents=True, exist_ok=True)
     for action in manifest['actions']:
+        if action['id'] not in args.actions: continue
         # Select every second frame; retain total clip duration for the preview.
         images, durations = [], []
         for index in range(0, len(action['frames']), 2):

@@ -1,9 +1,11 @@
+const {fileURLToPath}=require('node:url');
+const readImage=require('./read-image.cjs');
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { nativeImage } = require('electron');
-module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, root, windowMover, freePosition }) => {
+module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, root, windowMover, freePosition, onDragMove }) => {
   const out = path.join(root, 'tests/results'); fs.mkdirSync(out, { recursive: true });
   const checks = [], errors = [];
   for (const w of [pet,panel]) w.webContents.on('console-message', (_, level, message) => { if(level >= 3) errors.push(message); });
@@ -28,7 +30,7 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
     assert.ok(ico.readUInt16LE(4)>0);
     assert.equal(nativeImage.createFromPath(path.join(root,'assets','app.png')).isEmpty(),false);
     if(process.platform==='win32') {
-      const ffi=require('koffi');
+      const ffi=require('../app/node_modules/koffi');
       const getIcon=ffi.load('user32.dll').func('uintptr_t __stdcall SendMessageW(uintptr_t hwnd, uint32_t message, uintptr_t kind, intptr_t extra)');
       for(const win of [pet,panel,getBoard()]) {
         const handle=win.getNativeWindowHandle();
@@ -43,15 +45,20 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
       assert.equal(await getBoard().webContents.executeJavaScript("document.getElementById('surface').dataset.mode"),'black');
       checks.push('启动参数切换到黑底检查板');
     }
-    assert.deepEqual(snapshot().actions.map(a=>a.id), ['idle','reading','bottle','hug','swords']);
+    assert.deepEqual(snapshot().actions.map(a=>a.id), ['idle','reading','bottle','hug','swords','idle-shake','idle-think','grab','drop']);
+    assert.equal(snapshot().actions.find(a=>a.id==='idle').count,132);
+    const idleIds=snapshot().actions.filter(a=>a.role==='idle').map(a=>a.id);
+    assert.deepEqual(idleIds,['idle','idle-shake','idle-think']);
     assert.equal(snapshot().settings.action,'idle');assert.equal(snapshot().settings.autoPlay,true);
-    checks.push('加载待机、阅读、小绿瓶、相拥与御剑五套动画，启动进入自动待机');
+    assert.equal(snapshot().actions.find(a=>a.id==='grab').role,'interaction');
+    assert.equal(snapshot().actions.find(a=>a.id==='drop').role,'interaction');
+    checks.push('加载三套待机、四套特殊动作与两套专用拖动动画，启动进入自动待机');
     update({edgeBlend:false,autoPlay:false});
     for(const a of snapshot().actions) {
       update({ action:a.id, frame:0, playing:false, loop:true, visible:true });
       await wait(async () => await js(`document.getElementById('canvas').dataset.action === '${a.id}'`) && await frame() === 1);
       const alpha = await js(`(() => { const c=document.getElementById('canvas'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let zero=0,soft=0,solid=0;for(let i=3;i<d.length;i+=4){if(d[i]===0)zero++;else if(d[i]===255)solid++;else soft++;}return {zero,soft,solid}; })()`);
-      const raw = nativeImage.createFromPath(path.join(root,'assets',snapshot().animation.frames[0].file)).toBitmap();
+      const raw = await readImage(pet.webContents,fileURLToPath(snapshot().animation.frames[0].url));
       const expected = {zero:0,soft:0,solid:0}; for(let i=3;i<raw.length;i+=4){if(raw[i]===0)expected.zero++;else if(raw[i]===255)expected.solid++;else expected.soft++;}
       assert.deepEqual(alpha,expected); assert.ok(alpha.zero>0 && alpha.solid>1000 && alpha.soft>0);
       await screenshot(pet,a.id+'-transparent'); checks.push(a.id+' 原始透明像素一致');
@@ -105,7 +112,7 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
     let edgeFrame=0,bestCoverage=-1;
     const hugFrames=snapshot().animation.frames;
     for(let i=0;i<hugFrames.length;i++) {
-      const raw=nativeImage.createFromPath(path.join(root,'assets',hugFrames[i].file)).toBitmap();
+      const raw=await readImage(pet.webContents,fileURLToPath(hugFrames[i].url));
       let coverage=0;for(let y=0;y<hug.height;y++) if(raw[(y*hug.width+hug.width-1)*4+3]>48) coverage++;
       if(coverage>bestCoverage){bestCoverage=coverage;edgeFrame=i;}
     }
@@ -118,18 +125,11 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
     await js('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     await screenshot(pet,'相拥边界-渐隐');
     checks.push('四边及四角合成透明渐变、中心完整保留、透明边缘鼠标穿透、相拥入场帧对照');
-    update({action:'idle',frame:0,playing:false,cleanNoise:true});await wait(async()=>await frame()===1);
+    update({action:'idle',frame:0,playing:false});await wait(async()=>await frame()===1);
     assert.equal(snapshot().animation.variant,'cleaned-v1');
+    assert.equal(await panel.webContents.executeJavaScript("document.getElementById('clean-noise')===null"),true);
     const pixelData=()=>js("(() => {const c=document.getElementById('canvas');return Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data);})()");
-    const optimized=await pixelData();
-    await panel.webContents.executeJavaScript("document.getElementById('clean-noise').click()");
-    await wait(async()=>snapshot().animation.variant==='original' && await frame()===1);
-    const original=await pixelData();
-    assert.ok(optimized.some((value,i)=>i%4===3 && value<original[i]));
-    for(let i=3;i<original.length;i+=4) if(original[i]>=48) assert.deepEqual(optimized.slice(i-3,i+1),original.slice(i-3,i+1));
-    await panel.webContents.executeJavaScript("document.getElementById('clean-noise').click()");
-    await wait(async()=>snapshot().animation.variant==='cleaned-v1' && await frame()===1);
-    checks.push('实际开关切换净化与原版，主体及强特效像素保持一致');
+    checks.push('仅净化帧播放，不提供原始帧切换');
     for(const a of snapshot().actions) {
       const middle=Math.floor(a.count/2);
       update({action:a.id,frame:middle,playing:false,edgeBlend:false});
@@ -141,7 +141,7 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
         checks.push(a.id+' 纯色透明动画不施加环境渐隐');
         continue;
       }
-      const mask=nativeImage.createFromPath(path.join(root,'assets',maskFile)).toBitmap();
+      const mask=await readImage(pet.webContents,fileURLToPath(snapshot().animation.frames[middle].edgeMaskUrl));
       await panel.webContents.executeJavaScript("document.getElementById('edge-blend').click()");
       await wait(async()=>snapshot().animation.variant.endsWith(':edge-blend-v1') && await frame()===middle+1 && await js("state.settings.edgeBlend"));
       const blended=await pixelData();let faded=0,protectedCount=0;
@@ -163,18 +163,27 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
     await wait(async()=>await frame()===idle.count);
     let rev=snapshot().revision;await new Promise(r=>setTimeout(r,160));assert.equal(snapshot().revision,rev);
     update({playing:true});rev=snapshot().revision;
-    await wait(()=>Promise.resolve(snapshot().revision>rev));assert.equal(snapshot().settings.action,'idle');
-    checks.push('暂停不抽签，0%待机完整结束后重新待机');
+    await wait(()=>Promise.resolve(snapshot().revision>rev));assert.ok(idleIds.includes(snapshot().settings.action));
+    const idleSequence=[snapshot().settings.action];
+    for(let i=1;i<6;i++) {
+      const clip=snapshot().actions.find(a=>a.id===snapshot().settings.action);
+      update({frame:clip.count-1,playing:true});rev=snapshot().revision;
+      await wait(()=>Promise.resolve(snapshot().revision>rev));
+      idleSequence.push(snapshot().settings.action);
+    }
+    for(let i=0;i<idleSequence.length;i+=3) assert.deepEqual(idleSequence.slice(i,i+3).sort(),[...idleIds].sort());
+    for(let i=1;i<idleSequence.length;i++) assert.notEqual(idleSequence[i],idleSequence[i-1]);
+    checks.push('暂停不抽签，0%真实播放边界轮换三套待机，无连续重复');
     update({action:'idle',frame:idle.count-1,playing:true,actionProbability:100});rev=snapshot().revision;
     await wait(()=>Promise.resolve(snapshot().revision>rev));
-    const specialActions=snapshot().actions.filter(a=>a.role!=='idle');
+    const specialActions=snapshot().actions.filter(a=>a.role!=='idle' && a.role!=='interaction');
     const firstAutomaticAction=snapshot().settings.action;
     assert.ok(specialActions.some(a=>a.id===firstAutomaticAction));
     const stale=rev, live=snapshot().revision;
     await js(`window.petAPI.ended(${stale})`);assert.equal(snapshot().revision,live);
-    for(const a of snapshot().actions.filter(a=>a.id!=='idle')) {
+    for(const a of specialActions) {
       update({action:a.id,frame:a.count-1,playing:true});rev=snapshot().revision;
-      await wait(()=>Promise.resolve(snapshot().revision>rev));assert.equal(snapshot().settings.action,'idle');
+      await wait(()=>Promise.resolve(snapshot().revision>rev));assert.ok(idleIds.includes(snapshot().settings.action));
     }
     assert.equal(await panel.webContents.executeJavaScript("document.getElementById('loop').disabled"),true);
     checks.push('100%触发其他动作，所有动作结束均回待机，过期通知不会重复切换');
@@ -186,7 +195,7 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
       autoSequence.push(a.id);
       await wait(async()=>await js(`document.getElementById('canvas').dataset.action==='${a.id}'`) && await frame()>=1);
       update({frame:a.count-1,playing:true});rev=snapshot().revision;
-      await wait(()=>Promise.resolve(snapshot().revision>rev));assert.equal(snapshot().settings.action,'idle');
+      await wait(()=>Promise.resolve(snapshot().revision>rev));assert.ok(idleIds.includes(snapshot().settings.action));
     }
     for(let i=1;i<autoSequence.length;i++) assert.notEqual(autoSequence[i],autoSequence[i-1]);
     for(let i=0;i<autoSequence.length;i+=specialActions.length) {
@@ -199,6 +208,60 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
     fs.writeFileSync(path.join(out,'random-actions.json'),JSON.stringify({autoSequence,counts},null,2));
     checks.push(`${autoSequence.length}次真实自动触发：${specialActions.map(a=>a.title).join('、')}各两次，无连续重复，面板显示触发次数`);
     update({autoPlay:false,actionProbability:30});
+    // Use production IPC/controller hooks; do not move the user's cursor.
+    update({action:'reading',frame:20,autoPlay:true,playing:true,loop:false});
+    await wait(async()=>await js("document.getElementById('canvas').dataset.action==='reading'"));
+    const countsBeforeDrag={...snapshot().actionCounts}, boundsBeforeDrag=pet.getBounds();
+    const grabStart=Date.now();
+    await js('window.petAPI.dragStart()');
+    assert.equal(snapshot().settings.action,'grab');assert.equal(snapshot().settings.frame,0);
+    assert.equal(snapshot().interactionPhase,'grab');assert.equal(snapshot().settings.autoPlay,false);
+    assert.equal(snapshot().settings.loop,false);assert.equal(snapshot().settings.playing,false);
+    await wait(async()=>await js("document.getElementById('canvas').dataset.action==='grab'") && await frame()>=1);
+    assert.ok(Date.now()-grabStart<500,'抓取首帧出现延迟过大');
+    assert.deepEqual(pet.getBounds(),boundsBeforeDrag,'抓取切换改变了窗口位置或大小');
+    await screenshot(pet,'拖动-抓取');
+    const grabClip=snapshot().actions.find(a=>a.id==='grab');
+    await new Promise(r=>setTimeout(r,200));assert.equal(await frame(),1);
+    onDragMove();assert.equal(snapshot().settings.playing,true);
+    await wait(async()=>await frame()>4);
+    const heldRevision=snapshot().revision;
+    onDragMove();onDragMove();assert.equal(snapshot().revision,heldRevision);
+    await wait(async()=>!snapshot().settings.playing && await frame()===grabClip.count);
+    assert.equal(snapshot().settings.action,'grab');assert.equal(snapshot().interactionPhase,'grab');
+    const tailRevision=snapshot().revision;
+    await new Promise(r=>setTimeout(r,300));assert.equal(await frame(),grabClip.count);
+    assert.equal(snapshot().revision,tailRevision);
+    await screenshot(pet,'拖动-静止保持尾帧');
+    onDragMove();assert.equal(snapshot().settings.frame,0);assert.equal(snapshot().settings.playing,true);
+    await wait(async()=>await frame()<10);
+    await js(`window.petAPI.ended(${heldRevision})`);
+    assert.equal(snapshot().settings.playing,true);assert.equal(snapshot().settings.action,'grab');
+    checks.push('按住不动显示抓取首帧；实际移动播放一次，停住后自然播完并保持尾帧；再次移动重新播放');
+    checks.push('连续移动不反复重置抓取进度，悬空保持不触发随机动作，位置尺寸不变');
+    await js('window.petAPI.dragEnd()');
+    assert.equal(snapshot().settings.action,'drop');assert.equal(snapshot().settings.loop,false);
+    assert.equal(snapshot().interactionPhase,'drop');
+    await wait(async()=>await js("document.getElementById('canvas').dataset.action==='drop'") && await frame()>=1);
+    await screenshot(pet,'拖动-下落');
+    const staleDrop=snapshot().revision;
+    await js('window.petAPI.dragStart()');
+    assert.equal(snapshot().settings.action,'grab');assert.equal(snapshot().settings.frame,0);
+    await js(`window.petAPI.ended(${staleDrop})`);
+    assert.equal(snapshot().settings.action,'grab');
+    await js('window.petAPI.dragEnd()');
+    await wait(()=>Promise.resolve(snapshot().interactionPhase==='none'));
+    assert.equal(snapshot().settings.action,'idle');assert.equal(snapshot().settings.autoPlay,true);
+    assert.equal(snapshot().settings.loop,false);assert.equal(snapshot().settings.playing,true);
+    assert.deepEqual(snapshot().actionCounts,countsBeforeDrag);
+    checks.push('松手下落只播一次后恢复自动待机，途中重抓立即复位抓取，过期下落通知无效');
+    update({action:'idle',autoPlay:false,playing:false,loop:true});
+    await js('window.petAPI.dragStart();');await js('window.petAPI.dragEnd();');
+    await wait(()=>Promise.resolve(snapshot().interactionPhase==='none'));
+    assert.equal(snapshot().settings.autoPlay,false);assert.equal(snapshot().settings.playing,false);
+    assert.equal(snapshot().settings.action,'idle');assert.equal(snapshot().settings.loop,true);
+    checks.push('手动暂停时仍可抓取和下落，结束后保留原播放偏好');
+    update({autoPlay:false,playing:true,loop:true});
     const sequence=[...snapshot().actions,...snapshot().actions].map(a=>a.id);
     for(const id of sequence) {
       await panel.webContents.executeJavaScript(`document.getElementById('action').value='${id}';document.getElementById('action').dispatchEvent(new Event('change'))`);
@@ -210,8 +273,8 @@ module.exports = async ({ app, pet, panel, getBoard, movePet, update, snapshot, 
     assert.ok(await js('Number(document.getElementById("canvas").dataset.cached)')<=14);
     assert.equal(snapshot().settings.autoPlay,false);checks.push('快速手动切换关闭随机播放，最终动作与帧定位正确');
     update({edgeBlend:true});
-    update({action:'idle',frame:0,playing:false,scale:.5}); await wait(() => Promise.resolve(Math.abs(pet.getBounds().height-330)<=2)); console.log('HALF_SIZE', JSON.stringify(pet.getBounds()));
-    update({scale:1}); await wait(() => Promise.resolve(Math.abs(pet.getBounds().height-618)<=2)); console.log('FULL_SIZE', JSON.stringify(pet.getBounds())); checks.push('独立缩放');
+    update({action:'idle',frame:0,playing:false,scale:.5}); await wait(() => Promise.resolve(Math.abs(pet.getBounds().height-Math.ceil(snapshot().display.height+42))<=2)); console.log('HALF_SIZE', JSON.stringify(pet.getBounds()));
+    update({scale:1}); await wait(() => Promise.resolve(Math.abs(pet.getBounds().height-Math.ceil(snapshot().display.height+42))<=2)); console.log('FULL_SIZE', JSON.stringify(pet.getBounds())); checks.push('独立缩放');
     // Move a real transparent window while animation plays. The injected cursor
     // affects only this controller, never the user's actual desktop pointer.
     update({action:'idle',frame:0,playing:true,scale:.5});

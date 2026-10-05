@@ -1,0 +1,9 @@
+{
+  "characters": 26,
+  "actions": 109,
+  "frameFiles": 9937,
+  "frameBytes": 526979212,
+  "packBytes": 530722880,
+  "builtinBytes": 120341465,
+  "defaultCharacter": "hanli"
+}
