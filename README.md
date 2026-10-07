@@ -18,13 +18,15 @@ Windows 10 / 11 x64，可选安装路径，无需额外运行环境。安装包�
 
 ## 人物资源
 
+<!-- character-release-links -->[最新版人物资源](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/characters-20261005) · [历史归档](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/characters-20261007-091026-c22597)
+
 点击下载 `.qzpet`，在主界面「导入人物包」中安装。韩立已内置，其余人物各 4 套动作。
 
 | 人物资源 | 人物资源 | 人物资源 |
 | --- | --- | --- |
 | [韩立 · 112.8 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/hanli-432187716a36.qzpet) | [梅凝 · 14.6 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/meining-93845ed52189.qzpet) | [墨彩环 · 17.5 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mocaihuan-142dee967d0b.qzpet) |
-| [慕沛灵 · 17.7 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261007-091026-c22597/mupeiling-cb8a48493045.qzpet) | [南宫婉 · 15.0 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/nangongwan-dad3380e0445.qzpet) | [银月 · 16.9 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261007-091026-c22597/yinyue-416079de35a3.qzpet) |
-| [元瑶 · 15.5 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yuanyao-fd64f5a02a05.qzpet) | [紫灵 · 15.9 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261007-091026-c22597/ziling-fc2519c058d0.qzpet) | [陈巧倩 · 13.5 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/chenqiaoqian-6973135f6aab.qzpet) |
+| [慕沛灵 · 17.7 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mupeiling-cb8a48493045.qzpet) | [南宫婉 · 15.0 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/nangongwan-dad3380e0445.qzpet) | [银月 · 16.9 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yinyue-416079de35a3.qzpet) |
+| [元瑶 · 15.5 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yuanyao-fd64f5a02a05.qzpet) | [紫灵 · 15.9 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/ziling-fc2519c058d0.qzpet) | [陈巧倩 · 13.5 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/chenqiaoqian-6973135f6aab.qzpet) |
 | [董萱儿 · 16.6 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/dongxuaner-1c9e3ebca306.qzpet) | [范静梅 · 16.0 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/fanjingmei-db30c20ed578.qzpet) | [公孙杏 · 14.5 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/gongsunxing-5c773d6a49ec.qzpet) |
 | [菡云芝 · 16.2 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/hanyunzhi-bab99240eedf.qzpet) | [李缨宁 · 13.9 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/liyingning-7763aa794ec3.qzpet) | [凌玉灵 · 13.7 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/lingyuling-9e410d85e6cc.qzpet) |
 | [柳玉 · 15.1 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/liuyu-2ba285894bdd.qzpet) | [慕兰圣女 · 17.7 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mulanshengnv-75e8c816b00d.qzpet) | [南宫阙 · 14.6 MiB](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/nangongque-039fef346152.qzpet) |
