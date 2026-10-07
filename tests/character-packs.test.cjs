@@ -73,3 +73,28 @@ test('old disabled purification settings and new toggle patches cannot select or
   const migrated=configure({...defaults(),cleanNoise:false},{cleanNoise:false},actions);
   assert.equal('cleanNoise' in migrated,false);assert.equal('cleanNoise' in defaults(),false);
 });
+test('removing an installed package deletes only its resources, protects builtin and permits reinstall',async t=>{
+  const f=fixture(t);await f.manager.install('remote');
+  const folder=f.manager.load().manifest.actions.find(a=>a.id==='remote-idle').assetsRoot;
+  assert.equal(f.manager.list().entries[0].removable,true);
+  await assert.rejects(f.manager.remove('builtin'),/内置/);
+  await f.manager.remove('remote');assert.equal(fs.existsSync(folder),false);
+  assert.equal(f.manager.list().entries[0].installed,false);assert.equal(f.manager.list().entries[0].removable,false);
+  assert.deepEqual(loadLibrary(f.root,f.data).manifest.characters.map(c=>c.id),['builtin']);
+  assert.deepEqual(fs.readFileSync(path.join(f.assets,filename)),IMAGE);
+  await f.manager.install('remote');assert.equal(f.manager.list().entries[0].installed,true);
+});
+test('removal rejects escaped index paths and restores resources when index commit fails',async t=>{
+  const f=fixture(t);await f.manager.install('remote');
+  const file=path.join(f.data,'characters/index.json'),original=fs.readFileSync(file),index=JSON.parse(original);
+  for(const directory of ['../assets','remote/../../assets','remote/../other/package']){
+    index.installed.remote.directory=directory;fs.writeFileSync(file,JSON.stringify(index));
+    await assert.rejects(f.manager.remove('remote'),/路径/);
+  }
+  fs.writeFileSync(file,original);const folder=f.manager.load().manifest.actions.find(a=>a.id==='remote-idle').assetsRoot;
+  const rename=fs.renameSync;let failed=false;
+  t.mock.method(fs,'renameSync',(from,to)=>{if(to===file&&!failed){failed=true;throw Error('index write failed');}return rename(from,to);});
+  await assert.rejects(f.manager.remove('remote'),/index write/);
+  assert.deepEqual(fs.readFileSync(file),original);assert.deepEqual(fs.readFileSync(path.join(folder,filename)),IMAGE);
+  assert.equal(f.manager.load().installed.has('remote'),true);
+});

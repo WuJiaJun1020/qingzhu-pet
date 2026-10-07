@@ -14,19 +14,16 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/model.test.cjs tests/characters.test.cjs tests/drag.test.cjs tests/drag-animation.test.cjs tests/wave-assets.test.cjs tests/assets.test.cjs tests/character-packs.test.cjs tests/github-download.test.cjs tests/frame-edits.test.cjs tests/frame-brush.test.cjs",
-    "verify": "electron . --verify-characters --board=black",
+    "test": "node --test tests/model.test.cjs tests/characters.test.cjs tests/drag.test.cjs tests/drag-animation.test.cjs tests/wave-assets.test.cjs tests/assets.test.cjs tests/character-packs.test.cjs tests/github-download.test.cjs tests/frame-writer.test.cjs tests/frame-brush.test.cjs tests/panel-window.test.cjs tests/shared-surface.test.cjs tests/development-paths.test.cjs",
+    "verify": "node tests/run-client.cjs",
     "test:python": "python -m unittest discover -s tests -p *_test.py",
-    "verify:legacy": "electron . --verify --board=black",
     "optimize:assets": "python 处理工具/optimize_assets.py",
     "pack:characters": "python 处理工具/pack_characters.py --output-root release/build",
-    "verify:download": "electron . --verify-packs --board=black",
-    "verify:editor": "electron . --verify-editor",
-    "verify:soft-editor": "electron . --verify-editor --verify-soft-editor",
     "dist:win": "electron-builder --win nsis --x64 --publish never"
   },
   "dependencies": {
-    "koffi": "3.3.2"
+    "koffi": "3.3.2",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "electron": "38.8.6",

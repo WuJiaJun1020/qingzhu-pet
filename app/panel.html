@@ -3,56 +3,44 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; connect-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file:; style-src 'self' 'unsafe-inline'; connect-src 'none'">
   <title>青竹桌宠</title>
   <link rel="stylesheet" href="panel.css">
 </head>
 <body>
-  <header><div><h1>青竹桌宠</h1><p class="intro">陪伴桌面，随心拖动</p></div><button id="theme" aria-label="切换浅深色">浅色</button></header>
-  <main>
-    <section class="card">
-      <div class="section-heading"><label for="character">当前角色</label><button id="manage-packs" class="small" aria-expanded="false" aria-controls="pack-manager">人物资源</button></div>
-      <select id="character"></select>
-      <p id="character-info" class="muted compact"></p>
-      <div id="pack-manager" hidden>
-        <p class="muted">按需下载，安装后可离线使用。</p><div id="pack-list"></div>
-        <p id="pack-progress" class="muted" role="status"></p>
-        <div class="row"><button id="pack-cancel" hidden>取消下载</button><button id="pack-import">从文件导入</button></div>
+  <header class="titlebar"><img src="../assets/app.png" alt=""><span>青竹桌宠</span></header>
+  <main class="scene" data-background="shop">
+    <img class="brand" src="../assets/shop/brand-calligraphy.webp" alt="青竹桌宠" draggable="false">
+    <nav class="toolbar" aria-label="窗口工具">
+      <div class="scene-tools">
+        <select id="background" aria-label="背景"><option value="shop">店铺背景</option><option value="black">黑色</option><option value="white">白色</option></select>
+        <button id="toggle-panels" class="icon-button" aria-label="隐藏面板" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m4 3 16 18"/></svg></button>
       </div>
-    </section>
-    <section class="card">
-      <label for="scale">显示大小 <span id="scale-value"></span></label>
-      <input id="scale" type="range" min="10" max="100" step="1">
-      <div class="row size-row"><button data-size=".5" class="small">50%</button><button data-size="1" class="small">100% 原始大小</button><button id="visible" class="small">隐藏桌宠</button></div>
-      <p id="size-info" class="muted compact"></p>
-    </section>
-    <section class="card">
-      <label class="check toggle"><input id="auto-play" type="checkbox">自动待机与随机动作</label>
-      <label for="probability">动作触发概率 <span id="probability-value">30%</span></label>
-      <input id="probability" type="range" min="0" max="100" step="1" value="30">
-      <p id="auto-hint" class="muted compact"></p>
-    </section>
-    <section class="card">
-      <div class="section-heading"><label for="action">当前动画</label><span id="playback-mode" class="badge">自动播放</span></div>
-      <select id="action"></select>
-      <div class="row playback"><button id="play" class="primary">暂停</button><button id="restart">重播</button><button id="resume-auto">回到待机</button></div>
-    </section>
-    <details id="inspection" class="card">
-      <summary>动画检查 <span class="muted">逐帧 · 循环 · 统计</span></summary>
-      <div class="inspection-body">
-        <p id="info" class="muted"></p>
-        <div class="row"><label class="check"><input id="loop" type="checkbox">循环播放</label><label id="edge-blend-option" class="check"><input id="edge-blend" type="checkbox">环境边缘渐隐</label></div>
-        <label for="seek" class="seek-label">当前帧 <span id="frame"></span></label>
-        <input id="seek" type="range" min="0" max="1" value="0">
-        <div class="row"><button id="prev" class="small">上一帧</button><button id="next" class="small">下一帧</button><span id="time" class="muted"></span></div>
-        <p class="muted">逐帧或拖动进度会暂停播放；选择动画进入手动播放。</p>
-        <p id="action-counts" class="muted"></p>
-        <div class="row"><button id="edit-frame">修补透明帧</button><button id="board">打开背景检查板</button></div>
+      <div class="panel-tools"><button id="settings" aria-expanded="true" aria-controls="settings-drawer">设置</button><button id="hide-panel">收起</button><button id="quit">退出</button></div>
+    </nav>
+    <aside class="rack" aria-label="人物列表">
+      <div class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg><input id="search" type="search" placeholder="搜索人物" aria-label="搜索人物" autocomplete="off"></div>
+      <div class="filters" role="group" aria-label="人物筛选"><button data-filter="all" aria-pressed="true">全部道友</button><button data-filter="installed" aria-pressed="false">已安装</button><button data-filter="available" aria-pressed="false">未安装</button></div>
+      <div id="portraits" class="portraits" aria-label="人物"></div>
+      <p id="empty" class="empty" hidden>没有找到人物</p>
+      <footer class="rack-footer"><button id="invite" class="primary">邀至桌面</button><div id="transfer" hidden><div class="transfer-line"><span id="transfer-message" role="status"></span><button id="pack-cancel" hidden>取消</button></div><progress id="transfer-progress" max="100" value="0"></progress></div><div class="pack-tools"><button id="pack-import" class="text-button">导入人物包</button><button id="pack-remove" class="text-button" hidden>删除人物包</button></div><div id="remove-confirm" class="remove-confirm" role="alertdialog" aria-labelledby="remove-question" hidden><p id="remove-question"></p><p>人物包及已保存修补会被删除，可重新安装。</p><div class="row"><button id="remove-cancel">取消</button><button id="remove-accept">删除</button></div></div></footer>
+    </aside>
+    <div class="stage" aria-label="人物互动区域"></div>
+    <aside id="settings-drawer" class="drawer" aria-label="设置">
+      <header class="drawer-header"><h1>设置</h1><button id="close-settings" class="icon-button" aria-label="收起设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
+      <div class="drawer-content">
+        <section><label class="field-label" for="scale">显示大小 <output id="scale-value">100%</output></label><input id="scale" type="range" min="10" max="100" step="1"></section>
+        <section><label class="check"><input id="auto-play" type="checkbox">自动播放</label><label class="field-label" for="probability">随机动作概率 <output id="probability-value">30%</output></label><input id="probability" type="range" min="0" max="100" step="1"></section>
+        <section><label class="field-label" for="action">动作</label><select id="action"></select><div class="row playback"><button id="play" class="primary">暂停</button><button id="restart">重播</button><button id="resume-auto">待机</button></div></section>
+        <details id="inspection"><summary>逐帧检查</summary><div class="inspection-body"><p id="info" class="muted"></p><label class="check"><input id="loop" type="checkbox">循环播放</label><label id="edge-blend-option" class="check"><input id="edge-blend" type="checkbox">柔和边缘</label><label class="field-label" for="seek">当前帧 <output id="frame"></output></label><input id="seek" type="range" min="0" max="1" value="0"><div class="row"><button id="prev">上一帧</button><button id="next">下一帧</button><span id="time" class="muted"></span></div><p id="action-counts" class="muted"></p><button id="edit-frame">修补透明帧</button></div></details>
+        <section class="window-tools"><button id="reset-window">重置窗口大小</button></section>
       </div>
-    </details>
+    </aside>
+    <div id="error" class="error" role="alert" hidden><span id="error-message"></span><button id="dismiss-error" aria-label="关闭提示">×</button></div>
   </main>
-  <p id="error" role="alert" hidden></p>
-  <footer><span class="muted">右键桌宠打开设置 · 托盘可找回</span><button id="quit" class="small">退出</button></footer>
+  <script src="select-menu.js"></script>
+  <script src="panel-background.js"></script>
   <script src="panel.js"></script>
+  <script src="panel-player.js"></script>
 </body>
 </html>

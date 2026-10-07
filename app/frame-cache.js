@@ -1,6 +1,6 @@
 'use strict';
 
-// Keep only the current frame, eleven ahead and two behind. A pending decode
+// Keep a bounded, adjustable decode window. A pending decode
 // cannot put an obsolete image back after a seek, switch or window close.
 class PetFrameCache {
   constructor(frames, loop, load, onError) {
@@ -10,12 +10,21 @@ class PetFrameCache {
     this.onError = onError;
     this.entries = new Map();
     this.disposed = false;
+    this.ahead = 11;
+    this.behind = 2;
+    this.index = 0;
+  }
+  setWindow(ahead, behind) {
+    this.ahead = ahead;
+    this.behind = behind;
+    return this.prime(this.index);
   }
   prime(index) {
     if (this.disposed) return [];
+    this.index = index;
     const wanted = new Set();
-    for (let offset = 0; offset < 12; offset++) this.addIndex(wanted, index + offset);
-    for (let offset = 1; offset <= 2; offset++) this.addIndex(wanted, index - offset);
+    for (let offset = 0; offset <= this.ahead; offset++) this.addIndex(wanted, index + offset);
+    for (let offset = 1; offset <= this.behind; offset++) this.addIndex(wanted, index - offset);
     for (const key of this.entries.keys()) if (!wanted.has(key)) { this.entries.get(key).image?.close?.(); this.entries.delete(key); }
     return Array.from(wanted, key => {
       let entry = this.entries.get(key);

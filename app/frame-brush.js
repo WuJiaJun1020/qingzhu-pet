@@ -47,5 +47,24 @@
   }
   return result;
  }
- const api={count,alpha,footprint,feather,whiteRegion};if(typeof module==='object'&&module.exports)module.exports=api;else target.FrameBrush=api;
+ function sampleColor(rgba,mask,width,height,x,y){
+  if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x>=width||y>=height)return null;
+  const p=y*width+x;
+  return alpha(rgba[p*4+3],mask[p])>0?Array.from(rgba.slice(p*4,p*4+3)):null;
+ }
+ function colorRegion(rgba,mask,width,height,x,y,{radius=24,tolerance=24}={}){
+  const result=new Uint8Array(mask.length),color=sampleColor(rgba,mask,width,height,x,y);
+  if(!color)return result;
+  radius=Math.max(1,Math.min(128,Math.round(radius)||24));
+  tolerance=Number.isFinite(tolerance)?Math.max(0,Math.min(80,tolerance)):24;
+  const seen=new Uint8Array(mask.length),queue=[y*width+x];seen[queue[0]]=1;
+  for(let n=0;n<queue.length;n++){
+   const p=queue[n],xx=p%width,yy=Math.floor(p/width),i=p*4;
+   if(Math.hypot(xx-x,yy-y)>radius||!alpha(rgba[i+3],mask[p])||Math.max(...color.map((v,c)=>Math.abs(v-rgba[i+c])))>tolerance)continue;
+   result[p]=255;
+   for(const [nx,ny] of [[xx-1,yy],[xx+1,yy],[xx,yy-1],[xx,yy+1]])if(nx>=0&&nx<width&&ny>=0&&ny<height){const next=ny*width+nx;if(!seen[next]){seen[next]=1;queue.push(next);}}
+  }
+  return result;
+ }
+ const api={count,alpha,footprint,feather,whiteRegion,sampleColor,colorRegion};if(typeof module==='object'&&module.exports)module.exports=api;else target.FrameBrush=api;
 })(typeof window==='object'?window:globalThis);

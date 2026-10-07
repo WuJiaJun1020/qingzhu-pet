@@ -36,6 +36,21 @@ test('prefetch cache stays bounded and rejects stale async completion', async ()
   cache.dispose(); assert.equal(cache.size, 0); assert.deepEqual(cache.prime(2), []);
 });
 
+test('desktop cache shrink releases bitmaps, including decodes finishing after eviction', async () => {
+  const {PetFrameCache}=require('../app/frame-cache.js');
+  const pending=new Map(),closed=[];
+  const cache=new PetFrameCache(Array.from({length:40},(_,i)=>({url:i})),true,url=>new Promise(resolve=>pending.set(url,resolve)),e=>{throw e;});
+  const prime=cache.prime(10);await Promise.resolve();
+  for(const i of [10,18])pending.get(i)({close:()=>closed.push(i)});
+  await Promise.resolve();await Promise.resolve();
+  const small=cache.setWindow(5,0);
+  for(const [i,resolve] of pending)resolve({close:()=>closed.push(i)});
+  await Promise.all([...prime,...small]);
+  assert.equal(cache.size,6);assert.equal(cache.get(18),undefined);
+  assert.equal(closed.length,8);assert.equal(new Set(closed).size,8);
+  cache.dispose();assert.equal(closed.length,14);
+});
+
 test('default automatic idle and 30 percent, bounded persisted probability', () => {
   const d = defaults();
   assert.equal(d.autoPlay, true); assert.equal(d.action, 'idle'); assert.equal(d.actionProbability, 30);

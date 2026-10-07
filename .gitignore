@@ -29,3 +29,5 @@ assets/**/*.tmp
 处理工具/bin/
 处理工具/预览/
 处理工具/边缘预览/
+
+.local-config.json

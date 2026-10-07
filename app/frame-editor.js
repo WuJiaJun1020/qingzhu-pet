@@ -2,6 +2,7 @@
 const api=window.petAPI.frameEditor,$=id=>document.getElementById(id),stage=$('stage'),viewport=$('viewport'),after=$('after'),before=$('before'),ctx=after.getContext('2d',{willReadFrequently:true});
 let catalog,action,index=0,original,entry,loading=true,loadTicket=0,tool='smart',zoom=1,split=.5,stroke=null,pan=null,space=false;
 const brush=window.FrameBrush;
+let saving=false,allowClose=false;
 const entries=new Map(),dirty=new Set();
 const key=(id,i)=>id+':'+i;
 const run=promise=>promise.catch(e=>{loading=!action;if(action)controls();$('error').textContent=e.message||String(e);});
@@ -33,6 +34,7 @@ function finishStroke(){
  if(changes.length){entry.undo.push(changes);if(entry.undo.length>100)entry.undo.shift();entry.redo=[];mark();}
 }
 async function load(id,i){
+ if(saving)return;
  finishStroke();if(entry&&!entry.count&&!dirty.has(key(action.id,index))&&!entry.undo.length)entries.delete(key(action.id,index));
  action=catalog.actions.find(a=>a.id===id);index=Math.max(0,Math.min(action.count-1,i));const ticket=++loadTicket;loading=true;original=null;controls();$('error').textContent='';
  const record=await api.load(action.id,index);const image=new Image();image.src=record.url;await image.decode();if(ticket!==loadTicket)return;
@@ -70,10 +72,13 @@ stage.onpointerdown=e=>{
  if(loading||!original||e.target.closest('#divider'))return;
  if(e.button===1||space){pan={x:e.clientX,y:e.clientY,left:viewport.scrollLeft,top:viewport.scrollTop};stage.setPointerCapture(e.pointerId);e.preventDefault();return;}
  if(e.button!==0)return;const p=position(e);if(tool==='smart'){
- const region=brush.whiteRegion(original.data,entry.mask,action.width,action.height,p.x,p.y,{radius:Number($('white-radius').value),tolerance:Number($('white-tolerance').value),edge:0});
+ const picked=brush.sampleColor(original.data,entry.mask,action.width,action.height,p.x,p.y);
+ if(!picked){$('saved').textContent='点击位置已透明，请点击需要清除的颜色';e.preventDefault();return;}
+ const hex='#'+picked.map(v=>v.toString(16).padStart(2,'0')).join('');$('picked-color').textContent=hex.toUpperCase();$('color-swatch').style.backgroundColor=hex;
+ const region=brush.colorRegion(original.data,entry.mask,action.width,action.height,p.x,p.y,{radius:Number($('white-radius').value),tolerance:Number($('white-tolerance').value)});
  const changes=[];region.forEach((v,p)=>{const next=Math.max(entry.mask[p],v);if(next!==entry.mask[p]){changes.push([p,entry.mask[p]]);entry.mask[p]=next;}});
  if(changes.length){entry.undo.push(changes);if(entry.undo.length>100)entry.undo.shift();entry.redo=[];entry.count=brush.count(entry.mask);mark();draw();}
- $('saved').textContent=changes.length?`已去白 ${changes.length} 像素，可继续修补其他帧`:'此处没有识别到相近白色，请调整位置或容差';e.preventDefault();return;
+ $('saved').textContent=changes.length?`已取色 ${hex.toUpperCase()}，清除 ${changes.length} 像素，可继续修补其他帧`:'此处没有相近颜色，请调整位置或容差';e.preventDefault();return;
 }stroke={changes:new Map(),coverage:new Map(),last:p};stage.setPointerCapture(e.pointerId);paint(p.x,p.y);draw();e.preventDefault();
 };
 stage.onpointermove=e=>{
@@ -114,13 +119,14 @@ $('erase').onclick=()=>selectTool('erase');
 $('restore').onclick=()=>selectTool('restore');
 $('reset').onclick=()=>{if(loading)return;finishStroke();const changes=[];entry.mask.forEach((v,p)=>{if(v)changes.push([p,v]);});if(!changes.length)return;entry.undo.push(changes);entry.redo=[];entry.mask.fill(0);entry.count=0;mark();draw();};
 async function save(){
- finishStroke();if(loading||!dirty.size)return;$('saved').textContent=`正在保存并应用 ${dirty.size} 帧…`;loading=true;controls();
+ finishStroke();if(loading||!dirty.size)return;$('saved').textContent=`正在保存并应用 ${dirty.size} 帧…`;loading=true;saving=true;controls();
  try{
   const pending=[...dirty].map(k=>({k,value:entries.get(k)}));
   await api.saveBatch(pending.map(({value})=>({actionId:value.actionId,index:value.index,baseSha:value.baseSha,erased:value.mask})));
-  for(const {k,value} of pending){value.saved=value.mask.slice();dirty.delete(k);}
-  $('saved').textContent=`已统一保存并应用 ${pending.length} 帧`;
- }finally{loading=false;controls();}
+  for(const {k} of pending){dirty.delete(k);entries.delete(k);}
+  entry=null;saving=false;await load(action.id,index);
+  $('saved').textContent=`已直接保存 ${pending.length} 帧，新帧已成为修补基准`;
+ }finally{saving=false;loading=false;controls();}
 }
 $('save').onclick=()=>run(save());
 function choices(characterId){
@@ -145,6 +151,10 @@ document.addEventListener('keydown',e=>{
  if(e.code==='Space'){space=true;e.preventDefault();}
  if(e.key==='ArrowLeft'){e.preventDefault();$('prev').click();}if(e.key==='ArrowRight'){e.preventDefault();$('next').click();}
 });document.addEventListener('keyup',e=>{if(e.code==='Space')space=false;});window.addEventListener('blur',()=>{space=false;pan=null;finishStroke();});
-window.addEventListener('beforeunload',e=>{finishStroke();if(dirty.size){e.preventDefault();e.returnValue='';}});
-window.frameEditor={get dirtyFrames(){return dirty.size;},get currentFrame(){return index;},get erasedPixels(){return entry?.count||0;}};
-run((async()=>{catalog=await api.list();if(catalog.maskFormat!==2||!catalog.batchSave)throw Error('请先保存已有修补，再重启客户端以启用批量修补');$('character').replaceChildren(...catalog.characters.map(c=>new Option(c.name,c.id)));$('character').value=catalog.character;choices(catalog.character);$('action').value=catalog.action;await load(catalog.action,catalog.frame);})());
+window.addEventListener('beforeunload',e=>{finishStroke();if(!allowClose&&(dirty.size||saving)){e.preventDefault();e.returnValue='';}});
+api.onConfirmClose(()=>{if(saving){$('saved').textContent='正在保存，请完成后再关闭';run(api.cancelClose());return;}if(!$('close-confirm').open)$('close-confirm').showModal();});
+const cancelClose=()=>{$('close-confirm').close();run(api.cancelClose());};
+$('continue-edit').onclick=cancelClose;$('close-confirm').oncancel=e=>{e.preventDefault();cancelClose();};
+$('discard-edit').onclick=()=>{if(saving)return;allowClose=true;run(api.discardClose());};
+window.frameEditor={get saving(){return saving;},get loading(){return loading;},get dirtyFrames(){return dirty.size;},get currentFrame(){return index;},get erasedPixels(){return entry?.count||0;}};
+run((async()=>{catalog=await api.list();if(catalog.maskFormat!==2||!catalog.batchSave||!catalog.directWrite)throw Error('请先保存已有修补，再重启客户端以启用批量修补');$('character').replaceChildren(...catalog.characters.map(c=>new Option(c.name,c.id)));$('character').value=catalog.character;choices(catalog.character);$('action').value=catalog.action;await load(catalog.action,catalog.frame);})());

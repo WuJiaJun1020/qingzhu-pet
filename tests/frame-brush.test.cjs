@@ -1,5 +1,13 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),brush=require('../app/frame-brush.js');
+test('automatic color removal samples colored pixels and respects tolerance, connectivity, radius and transparency',()=>{
+ const rgba=new Uint8ClampedArray([20,50,180,255,24,52,182,128,220,20,20,255,20,50,180,255]),mask=new Uint8Array(4);
+ assert.deepEqual(brush.sampleColor(rgba,mask,4,1,0,0),[20,50,180]);
+ assert.deepEqual([...brush.colorRegion(rgba,mask,4,1,0,0,{radius:4,tolerance:5})],[255,255,0,0]);
+ assert.deepEqual([...brush.colorRegion(rgba,mask,4,1,0,0,{tolerance:0})],[255,0,0,0]);
+ mask[0]=255;assert.equal(brush.sampleColor(rgba,mask,4,1,0,0),null);assert.equal(brush.count(brush.colorRegion(rgba,mask,4,1,0,0)),0);
+ assert.equal(brush.sampleColor(rgba,mask,4,1,-1,0),null);
+});
 test('soft brush clears its center and grades adjacent pixels; precise brush remains exact',()=>{
  const soft=new Uint8Array(49);brush.footprint(7,7,3,3,3,true,(p,v)=>soft[p]=v);
  assert.equal(soft[24],255);assert.ok(soft[25]>0&&soft[25]<255);assert.equal(soft[26],0);
