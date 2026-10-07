@@ -45,7 +45,7 @@ test('truncated download cannot commit an installation',async t=>{
   const bytes=pack(),f=fixture(t,bytes,async()=>({ok:true,body:[bytes.subarray(0,40)]}));
   await assert.rejects(f.manager.install('remote'),/不完整/);assert.equal(f.manager.load().installed.has('remote'),false);
   assert.deepEqual(fs.readdirSync(path.join(f.data,'downloads')),[]);
-  assert.equal(f.manager.list().transfer.manualDownload,true);assert.match(f.manager.list().transfer.message,/手动下载.*导入人物包/);
+  assert.equal(f.manager.list().transfer.manualDownload,true);assert.match(f.manager.list().transfer.message,/手动下载.*导入/);
 });
 test('cancelling a download removes partial content and keeps the default usable',async t=>{
   const bytes=pack(),f=fixture(t,bytes,async()=>({ok:true,body:(async function*(){yield bytes.subarray(0,10);await new Promise(r=>setTimeout(r,30));yield bytes.subarray(10);})()}));

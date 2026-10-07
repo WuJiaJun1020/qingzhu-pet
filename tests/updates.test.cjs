@@ -41,6 +41,22 @@ test('GitHub API rate limits fall back to the public latest software release and
  await up.check();await up.download();assert.equal(up.snapshot().status,'ready');assert.equal(calls.length,3);
 });
 function packsFixture(){let entries=[{id:'old',name:'已有',installed:true,updateAvailable:false}],calls=[];return {calls,list:()=>({entries}),checkUpdates:async()=>{entries[0].updateAvailable=true;if(entries.length===1)entries.push({id:'new',name:'新增',installed:false,updateAvailable:false});},install:async id=>{calls.push(id);entries.find(p=>p.id===id).updateAvailable=false;},cancel:()=>{}};}
+
+test('Electron empty redirected URL reads the public release metadata and validates the checksum',async t=>{
+ const up=createSoftwareUpdater({data:folder(t),version:'0.3.1',installed:true,fetch:async(url,options)=>{
+  if(url.startsWith('https://api.github.com/'))return new Response('',{status:403});
+  if(url.endsWith('/latest'))return options.method==='HEAD'?{ok:true,url:''}:new Response('<meta property="og:url" content="/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.2" />');
+  return {ok:true,headers:new Headers({'content-length':String(bytes.length)})};
+ },downloadFetch:async()=>new Response(sha(bytes)+'  qingzhu-pet-0.3.2-windows-x64-setup.exe')});
+ await up.check();assert.equal(up.snapshot().availableVersion,'0.3.2');assert.equal(up.snapshot().status,'available');
+});
+
+test('public page fallback rejects unrelated, oversized and nonsoftware release metadata',async t=>{
+ for(const html of ['<meta property="og:url" content="https://example.com/releases/tag/v9.0.0">','<meta property="og:url" content="/WuJiaJun1020/qingzhu-pet/releases/tag/characters-20261005">','x'.repeat(2*1024**2+1)]){
+  const up=createSoftwareUpdater({data:folder(t),version:'0.3.1',installed:true,fetch:async(url,options)=>url.startsWith('https://api.github.com/')?new Response('',{status:403}):options.method==='HEAD'?{ok:true,url:''}:new Response(html)});
+  await assert.rejects(up.check(),/版本|过大/);assert.equal(up.snapshot().manualDownload,true);await assert.rejects(up.download(),/先检查/);
+ }
+});
 test('installed service updates only installed characters, announces new people, persists preferences',async t=>{
  const packs=packsFixture(),data=folder(t),reloaded=[];
  const service=createUpdateService({data,installed:true,version:'0.3.0',packs,onInstalled:id=>reloaded.push(id)});

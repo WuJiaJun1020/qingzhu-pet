@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-module.exports=async({panel,snapshot,data,out,checks})=>{
+module.exports=async({panel,player,snapshot,data,out,checks})=>{
  const ui=code=>panel.webContents.executeJavaScript(code),pause=ms=>new Promise(r=>setTimeout(r,ms));
  const wait=async fn=>{for(let i=0;i<600;i++){if(await fn())return;await pause(25);}throw Error('更新验收超时');};
  await wait(()=>ui('!!window.petAPI && document.querySelectorAll(".character-card").length>0'));
@@ -18,10 +18,20 @@ module.exports=async({panel,snapshot,data,out,checks})=>{
  checks.push('安装版检查后替换已安装人物，新增动作立即进入播放列表，新人物仅加入可安装列表');
  await ui('document.querySelector(".character-card[data-id=update-demo]").click();document.getElementById("invite").click()');
  await wait(()=>ui('!document.getElementById("manual-character").hidden'));
- assert.match(await ui('document.getElementById("error-message").textContent'),/手动下载.*导入人物包/);
+ assert.match(await ui('document.getElementById("error-message").textContent'),/手动下载.*导入/);
  assert.match(await ui('window.petAPI.manualDownload("update-demo")'),/\/update-demo\.qzpet$/);
  assert.equal(snapshot().packs.entries.find(p=>p.id==='update-demo').installed,false);
- await ui('document.getElementById("invite").click()');
+ const closeRect=await ui('(()=>{const r=document.getElementById("dismiss-error").getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()');
+ assert.ok(closeRect.width>=40&&closeRect.height>=40);
+ const viewport=player.getBounds();assert.ok(closeRect.x+closeRect.width<=viewport.x,'提示关闭按钮必须在人物渲染区域之外');
+ fs.writeFileSync(path.join(out,'下载失败手动选择.png'),(await panel.webContents.capturePage()).toPNG());
+ panel.webContents.sendInputEvent({type:'mouseDown',x:Math.round(closeRect.x+closeRect.width/2),y:Math.round(closeRect.y+closeRect.height/2),button:'left',clickCount:1});
+ panel.webContents.sendInputEvent({type:'mouseUp',x:Math.round(closeRect.x+closeRect.width/2),y:Math.round(closeRect.y+closeRect.height/2),button:'left',clickCount:1});
+ await wait(()=>ui('document.getElementById("error").hidden'));
+ await ui('document.getElementById("probability").dispatchEvent(new Event("input"))');await pause(100);
+ assert.equal(await ui('document.getElementById("error").hidden'),true,'关闭提示后状态刷新不得再次弹出');
+ assert.equal(await ui('document.getElementById("download-recovery").hidden'),false);
+ await ui('document.getElementById("retry-character").click()');
  await wait(()=>ui('!!document.querySelector(".character-card.installed[data-id=update-demo]") && document.getElementById("transfer").hidden'));
  await wait(()=>Promise.resolve(snapshot().character.id==='update-demo'));
  assert.ok(snapshot().actions.some(a=>a.id==='update-demo-update-test'));
@@ -40,7 +50,7 @@ module.exports=async({panel,snapshot,data,out,checks})=>{
  await ui('document.getElementById("install-software").click()');
  await wait(()=>ui('document.getElementById("error-message").textContent.includes("禁止启动安装程序")'));
  checks.push('软件检查忽略人物发布，下载安装包校验完成；验收模式阻止实际启动安装程序');
- checks.push('人物和软件重复限流失败后显示手动下载入口；再次下载成功，验收未打开外部浏览器');
+ checks.push('第一次下载失败即显示重试与手动下载；点击重试后成功；提示关闭按钮在人物视图外且关闭后不再重复弹出');
  await ui('document.getElementById("auto-character-updates").click();document.getElementById("auto-software-updates").click()');
  await wait(()=>Promise.resolve(!snapshot().updates.preferences.autoCharacters&&!snapshot().updates.preferences.autoSoftware));
  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(data,'updates.json'))),{autoCharacters:false,autoSoftware:false});

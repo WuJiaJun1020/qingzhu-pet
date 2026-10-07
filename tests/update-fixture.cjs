@@ -24,7 +24,7 @@ module.exports=({root,charactersDirectory})=>{
  const failedOnce=new Set();
  return {fetch:async url=>{if(url===CATALOG_URL)return new Response(JSON.stringify(catalog));if(url.startsWith('https://api.github.com/repos/WuJiaJun1020/qingzhu-pet/releases?'))return new Response(JSON.stringify(releases));throw Error('验收禁止真实联网：'+url);},download:async url=>{
   if(!downloads.has(url))throw Error('验收缺少下载样本：'+url);
-  if((url.endsWith('update-demo.qzpet')||url.endsWith('.exe'))&&!failedOnce.has(url)){failedOnce.add(url);throw Error('GitHub 多次限流，下载失败，请稍后重试或手动下载');}
+  if((url.endsWith('update-demo.qzpet')||url.endsWith('.exe'))&&!failedOnce.has(url)){failedOnce.add(url);throw Error('GitHub 暂时限流，请稍后手动重试');}
   return new Response(downloads.get(url));
  }};
 };

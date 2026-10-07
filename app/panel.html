@@ -23,7 +23,7 @@
       <div class="filters" role="group" aria-label="人物筛选"><button data-filter="all" aria-pressed="true">全部道友</button><button data-filter="installed" aria-pressed="false">已安装</button><button data-filter="available" aria-pressed="false">未安装</button></div>
       <div id="portraits" class="portraits" aria-label="人物"></div>
       <p id="empty" class="empty" hidden>没有找到人物</p>
-      <footer class="rack-footer"><button id="invite" class="primary">邀至桌面</button><div id="transfer" hidden><div class="transfer-line"><span id="transfer-message" role="status"></span><button id="pack-cancel" hidden>取消</button></div><progress id="transfer-progress" max="100" value="0"></progress></div><button id="manual-character" hidden>手动下载人物包</button><div class="pack-tools"><button id="pack-import" class="text-button">导入人物包</button><button id="pack-remove" class="text-button" hidden>删除人物包</button></div><div id="remove-confirm" class="remove-confirm" role="alertdialog" aria-labelledby="remove-question" hidden><p id="remove-question"></p><p>人物包及已保存修补会被删除，可重新安装。</p><div class="row"><button id="remove-cancel">取消</button><button id="remove-accept">删除</button></div></div></footer>
+      <footer class="rack-footer"><div id="error" class="error" role="alert" hidden><span id="error-message"></span><button id="dismiss-error" aria-label="关闭提示">×</button></div><button id="invite" class="primary">邀至桌面</button><div id="transfer" hidden><div class="transfer-line"><span id="transfer-message" role="status"></span><button id="pack-cancel" hidden>取消</button></div><progress id="transfer-progress" max="100" value="0"></progress></div><div id="download-recovery" class="download-recovery" hidden><button id="retry-character">重试下载</button><button id="manual-character" hidden>手动下载</button></div><div class="pack-tools"><button id="pack-import" class="text-button">导入人物包</button><button id="pack-remove" class="text-button" hidden>删除人物包</button></div><div id="remove-confirm" class="remove-confirm" role="alertdialog" aria-labelledby="remove-question" hidden><p id="remove-question"></p><p>人物包及已保存修补会被删除，可重新安装。</p><div class="row"><button id="remove-cancel">取消</button><button id="remove-accept">删除</button></div></div></footer>
     </aside>
     <div class="stage" aria-label="人物互动区域"></div>
     <aside id="settings-drawer" class="drawer" aria-label="设置">
@@ -38,7 +38,7 @@
         <section class="window-tools"><button id="reset-window">重置窗口大小</button></section>
       </div>
     </aside>
-    <div id="error" class="error" role="alert" hidden><span id="error-message"></span><button id="dismiss-error" aria-label="关闭提示">×</button></div>
+
   </main>
   <script src="select-menu.js"></script>
   <script src="panel-background.js"></script>

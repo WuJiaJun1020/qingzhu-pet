@@ -89,7 +89,7 @@ function createPackManager({root,data,charactersDirectory=path.join(data,'charac
     try{
       if(localFile)return await commit(localFile,p);
       const folder=path.join(data,'downloads');await fsp.mkdir(folder,{recursive:true});temporary=inside(folder,crypto.randomUUID()+'.partial');
-      const response=await fetch(p.url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)]),cache:'no-store',onRetry:({message})=>emit({message})});
+      const response=await fetch(p.url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)]),cache:'no-store'});
       if(!response.ok)throw new Error(response.status===404?'人物包尚未发布，请稍后重试或从文件导入':`下载失败（HTTP ${response.status}）`);
       if(!response.body)throw new Error('下载响应没有内容');
       emit({message:'正在下载人物包'});
@@ -107,7 +107,7 @@ function createPackManager({root,data,charactersDirectory=path.join(data,'charac
     }catch(error){
       const manualDownload=!localFile&&!controller.signal.aborted&&transfer.status==='downloading';
       failure=controller.signal.aborted?'下载已取消':error.message;
-      if(manualDownload)failure+='。请手动下载「'+p.name+'」的 .qzpet 文件，再点击“导入人物包”。';
+      if(manualDownload)failure+='。可手动下载「'+p.name+'」后导入。';
       emit({manualDownload});throw new Error(failure);
     }
     finally{

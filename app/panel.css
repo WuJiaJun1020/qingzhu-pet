@@ -382,8 +382,9 @@ h1,p {
 }
 
 .transfer-line button {
-  min-height:24px;
-  padding:2px 6px;
+  min-height:36px;
+  min-width:48px;
+  padding:4px 8px;
   font-size:12px;
 }
 
@@ -553,30 +554,30 @@ summary::marker {
 }
 
 .error {
-  position:absolute;
-  z-index:10;
-  bottom:24px;
-  left:50%;
-  transform:translateX(-50%);
-  max-width:430px;
+  position:relative;
+  width:100%;
   display:flex;
-  align-items:center;
-  gap:14px;
+  align-items:flex-start;
+  gap:4px;
   background:#fff0db;
   border:1px solid #ad7350;
   border-radius:10px;
-  padding:10px 14px;
+  padding:8px;
   box-shadow:0 4px 15px #0003;
   color:#7e3522;
 }
 
 .error button {
-  min-height:26px;
+  flex:0 0 40px;
+  min-height:40px;
   padding:0 6px;
   background:transparent;
   border:0;
   color:inherit;
 }
+#error-message { min-width:0; max-height:132px; overflow:auto; overflow-wrap:anywhere; font-size:12px; align-self:center; }
+.download-recovery { display:flex; gap:6px; }
+.download-recovery button { flex:1; min-width:0; padding:6px; font-size:12px; }
 
 .panels-hidden .rack,.panels-hidden .drawer,.panels-hidden .panel-tools {
   display:none;

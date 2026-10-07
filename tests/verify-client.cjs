@@ -14,7 +14,7 @@ module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,sn
     panel.setMinimizable(false);panel.setClosable(false);
     await wait(()=>Promise.resolve(surface.hosted));await wait(async()=>await rendered()>1);
     if(process.argv.includes('--verify-installed')){
-      await require('./verify-updates.cjs')({panel,snapshot,data,out,checks});
+      await require('./verify-updates.cjs')({panel,player,snapshot,data,out,checks});
       fs.writeFileSync(path.join(out,'当前客户端验收.json'),JSON.stringify({passed:true,runtime,checks},null,2));panel.setClosable(true);app.quit();return;
     }
     if(process.argv.includes('--publisher-check')){

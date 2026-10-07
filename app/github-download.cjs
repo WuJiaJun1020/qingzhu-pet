@@ -1,5 +1,4 @@
 'use strict';
-const {setTimeout:delay}=require('node:timers/promises');
 const header=(response,name)=>response.headers?.get(name);
 function limited(response){return response.status===429||(response.status===403&&(header(response,'retry-after')!=null||header(response,'x-ratelimit-remaining')==='0'));}
 function retryDelay(response,now,fallback){
@@ -11,30 +10,23 @@ function retryDelay(response,now,fallback){
 async function discard(response){try{await response.body?.cancel();}catch{}}
 // API metadata avoids stale redirects. Public binaries remain available when
 // the anonymous API quota is exhausted; remember that cooldown across downloads.
-function createGitHubDownload(fetch,{now=Date.now,wait=(ms,signal)=>delay(ms,undefined,{signal})}={}){
+function createGitHubDownload(fetch,{now=Date.now}={}){
   const releases=new Map();let apiUntil=0,publicUntil=0;
   const headers={'User-Agent':'qingzhu-pet'};
   return async(url,options={})=>{
     const link=new URL(url),match=link.pathname.match(/^\/WuJiaJun1020\/qingzhu-pet\/releases\/download\/([^/]+)\/([^/]+)$/);
     if(link.origin!=='https://github.com'||!match||link.username||link.password)throw new Error('人物下载地址不合法');
-    const {onRetry,...request}=options;
+    const request=options;
     const [,tag,name]=match;
     const cooldown=response=>{if([403,429].includes(response.status))apiUntil=Math.max(apiUntil,now()+retryDelay(response,now(),60000));};
     async function publicDownload(){
-      for(let attempt=0;attempt<=2;attempt++){
-        const remaining=publicUntil-now();
-        if(remaining>0){
-          if(remaining>120000)throw Error('GitHub 暂时限流，请稍后重试或手动下载');
-          onRetry?.({message:`GitHub 暂时限流，${Math.ceil(remaining/1000)} 秒后重试，可取消`});
-          await wait(remaining,request.signal);
-        }
-        request.signal?.throwIfAborted();
-        const response=await fetch(url,{...request,headers});
-        if(!limited(response))return response;
-        publicUntil=Math.max(publicUntil,now()+retryDelay(response,now(),60000*2**attempt));
-        await discard(response);
-        if(attempt===2)throw Error('GitHub 多次限流，下载失败，请稍后重试或手动下载');
-      }
+      request.signal?.throwIfAborted();
+      if(now()<publicUntil)throw Error('GitHub 暂时限流，请稍后手动重试');
+      const response=await fetch(url,{...request,headers});
+      if(!limited(response))return response;
+      publicUntil=Math.max(publicUntil,now()+retryDelay(response,now(),60000));
+      await discard(response);
+      throw Error('GitHub 暂时限流，请稍后手动重试');
     }
     if(now()<apiUntil)return publicDownload();
     const cached=releases.get(tag);

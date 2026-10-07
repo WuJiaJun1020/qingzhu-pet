@@ -46,37 +46,27 @@ test('rate-limited asset API falls back to the public binary and caches cooldown
  assert.equal(calls.length,4);assert.equal(calls[3],url);
 });
 
-test('public download honors Retry-After before retrying and strips internal callbacks',async()=>{
- let clock=0,binary=0;const waits=[],messages=[];
- const download=createGitHubDownload(async(u,o)=>{
-  assert.equal('onRetry' in o,false);
-  if(u.includes('api.github.com'))return new Response('',{status:403});
-  return ++binary===1?new Response('',{status:429,headers:{'retry-after':'3'}}):new Response('ok');
- },{now:()=>clock,wait:async ms=>{waits.push(ms);clock+=ms;}});
- assert.equal(await (await download(url,{onRetry:v=>messages.push(v.message)})).text(),'ok');
- assert.deepEqual(waits,[3000]);assert.equal(messages.length,1);assert.equal(binary,2);
-});
 
-test('persistent limit retries only twice with backoff, then preserves cooldown',async()=>{
- let clock=0,binary=0;const waits=[];
+test('first public rate limit fails immediately; only user calls can retry after cooldown',async()=>{
+ let clock=0,binary=0;
  const download=createGitHubDownload(async u=>{
   if(u.includes('api.github.com'))return new Response('',{status:403});
-  binary++;return new Response('',{status:429});
- },{now:()=>clock,wait:async ms=>{waits.push(ms);clock+=ms;}});
- await assert.rejects(download(url),/多次限流.*手动下载/);
- assert.deepEqual(waits,[60000,120000]);assert.equal(binary,3);
- await assert.rejects(download(url),/手动下载/);assert.equal(binary,3);
+  return ++binary===1?new Response('',{status:429,headers:{'retry-after':'60'}}):new Response('ok');
+ },{now:()=>clock});
+ await assert.rejects(download(url),/限流.*手动重试/);assert.equal(binary,1);
+ await assert.rejects(download(url),/限流/);assert.equal(binary,1,'cooldown must neither wait nor send a premature request');
+ clock=60001;assert.equal(binary,1,'clock advancing cannot trigger an automatic retry');
+ assert.equal(await (await download(url)).text(),'ok');assert.equal(binary,2);
 });
 
-test('long Retry-After is not shortened or retried early',async()=>{
- let calls=0;
- const download=createGitHubDownload(async u=>u.includes('api.github.com')?new Response('',{status:403}):(calls++,new Response('',{status:429,headers:{'retry-after':'3600'}})),{wait:()=>assert.fail('must not wait an hour')});
- await assert.rejects(download(url),/手动下载/);await assert.rejects(download(url),/手动下载/);assert.equal(calls,1);
+test('network failure makes no automatic retry',async()=>{
+ let binary=0;
+ const download=createGitHubDownload(async u=>{if(u.includes('api.github.com'))return new Response('',{status:403});binary++;throw Error('connection closed');});
+ await assert.rejects(download(url),/connection closed/);assert.equal(binary,1);
 });
 
-test('cancelling during rate-limit wait stops without another request',async()=>{
- const controller=new AbortController();let calls=0;
- const download=createGitHubDownload(async u=>u.includes('api.github.com')?new Response('',{status:403}):(calls++,new Response('',{status:429})));
- await assert.rejects(download(url,{signal:controller.signal,onRetry:()=>controller.abort()}),{name:'AbortError'});
- assert.equal(calls,1);
+test('cancelled request does not reach the download endpoint',async()=>{
+ const controller=new AbortController();controller.abort();let calls=0;
+ const download=createGitHubDownload(async(u,o)=>{o.signal.throwIfAborted();calls++;return new Response('ok');});
+ await assert.rejects(download(url,{signal:controller.signal}),{name:'AbortError'});assert.equal(calls,0);
 });

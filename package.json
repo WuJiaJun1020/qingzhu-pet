@@ -1,6 +1,6 @@
 {
   "name": "qingzhu-pet",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "青竹桌宠：桌面角色动画、交互测试与透明素材处理工具",
   "main": "app/main.cjs",

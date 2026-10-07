@@ -5,6 +5,19 @@ const {renameWithRetry}=require('./file-operations.cjs');
 const {validVersion,compareVersions}=require('./versions.cjs');
 const API='https://api.github.com/repos/WuJiaJun1020/qingzhu-pet';
 const PREFIX='https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/';
+const LATEST='https://github.com/WuJiaJun1020/qingzhu-pet/releases/latest';
+const releaseTag=url=>url?.match(/^https:\/\/github\.com\/WuJiaJun1020\/qingzhu-pet\/releases\/tag\/(v\d+\.\d+\.\d+)\/?$/)?.[1];
+async function pageReleaseTag(response){
+ const chunks=[];let size=0;
+ for await(const chunk of response.body){size+=chunk.byteLength;if(size>2*1024**2)throw Error('软件发布页面过大');chunks.push(Buffer.from(chunk));}
+ const html=Buffer.concat(chunks).toString('utf8');
+ for(const meta of html.match(/<meta\b[^>]*>/gi)||[]){
+  if(!/\bproperty\s*=\s*["']og:url["']/i.test(meta))continue;
+  const value=meta.match(/\bcontent\s*=\s*["']([^"']+)["']/i)?.[1];
+  if(value){const tag=releaseTag(new URL(value,LATEST).href);if(tag)return tag;}
+ }
+ throw Error('暂时无法识别软件版本，请重试或前往 GitHub 下载');
+}
 function findRelease(releases,currentVersion){
  const options=[];
  for(const release of releases){
@@ -26,19 +39,21 @@ function createSoftwareUpdater({data,version,installed,fetch,downloadFetch=fetch
  const exclusive=async fn=>{if(busy)throw Error('软件更新正在处理');busy=true;try{return await fn();}finally{busy=false;}};
  async function publicLatest(){
   const options={method:'HEAD',cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20000)])};
-  const response=await fetch('https://github.com/WuJiaJun1020/qingzhu-pet/releases/latest',options);
+  const response=await fetch(LATEST,options);
   if(!response.ok)throw Error('检查软件更新失败，请稍后重试');
-  const match=response.url?.match(/^https:\/\/github\.com\/WuJiaJun1020\/qingzhu-pet\/releases\/tag\/(v\d+\.\d+\.\d+)$/);
-  if(!match)throw Error('最新发布不是正式软件版本');
-  const tag=match[1],nextVersion=tag.slice(1);if(compareVersions(nextVersion,version)<=0)return null;
+  let tag=releaseTag(response.url);
+  // Electron net.fetch may leave Response.url empty after a redirect.
+  if(!tag){const page=await fetch(LATEST,{...options,method:'GET'});if(!page.ok)throw Error('无法读取软件发布页，请稍后重试');tag=await pageReleaseTag(page);}
+  const nextVersion=tag.slice(1);if(compareVersions(nextVersion,version)<=0)return null;
   const name=`qingzhu-pet-${nextVersion}-windows-x64-setup.exe`,url=PREFIX+tag+'/'+name;
   const asset=await fetch(url,options),size=Number(asset.headers.get('content-length'));
+  if([403,429].includes(asset.status))throw Error('GitHub 暂时限制访问安装包，请稍后手动重试或前往 GitHub 下载');
   if(!asset.ok||!Number.isSafeInteger(size)||size<2||size>1024**3)throw Error('无法确认安装包大小，请稍后重试');
   return {version:nextVersion,name,url,bytes:size,checksumUrl:PREFIX+tag+'/SHA256SUMS.txt'};
  }
  async function check(){return exclusive(async()=>{
   if(!installed){emit({status:'development',message:'本地开发版不覆盖安装，请在安装版中更新软件。'});return;}
-  emit({status:'checking',message:'正在检查软件版本…'});controller=new AbortController();
+  emit({status:'checking',manualDownload:false,message:'正在检查软件版本…'});controller=new AbortController();
   try{
    const releases=[];let fallback=false;
    for(let page=1;page<=5;page++){
@@ -57,7 +72,7 @@ function createSoftwareUpdater({data,version,installed,fetch,downloadFetch=fetch
    }
    if(ready&&(ready.version!==next?.version||ready.sha256!==next?.sha256||ready.bytes!==next?.bytes))ready=null;
    emit(next?{status:ready?'ready':'available',availableVersion:next.version,total:next.bytes,message:ready?'安装包已就绪。':'发现新版 v'+next.version}:{status:'latest',availableVersion:null,message:'软件已是最新版。'});
-  }catch(error){emit({status:'error',message:error.message});throw error;}finally{controller=null;}
+  }catch(error){emit({status:'error',manualDownload:true,message:error.message});throw error;}finally{controller=null;}
  });}
  async function download(){return exclusive(async()=>{
   if(!installed)throw Error('本地开发版不能下载并覆盖安装');
@@ -66,7 +81,7 @@ function createSoftwareUpdater({data,version,installed,fetch,downloadFetch=fetch
   const temporary=target+'.'+crypto.randomUUID()+'.partial';controller=new AbortController();
   try{
    emit({status:'downloading',manualDownload:false,received:0,total:next.bytes,message:'正在下载安装包…'});
-   const response=await downloadFetch(next.url,{cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)]),onRetry:({message})=>emit({message})});if(!response.ok)throw Error('安装包下载失败（HTTP '+response.status+'）');
+   const response=await downloadFetch(next.url,{cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)])});if(!response.ok)throw Error('安装包下载失败（HTTP '+response.status+'）');
    emit({message:'正在下载安装包…'});
    const handle=await fs.open(temporary,'wx');let size=0,last=0;const digest=crypto.createHash('sha256');
    try{for await(const chunk of response.body){if(controller.signal.aborted)throw Error('下载已取消');size+=chunk.byteLength;if(size>next.bytes)throw Error('安装包大小超过清单');digest.update(chunk);await handle.writeFile(chunk);if(Date.now()-last>200){emit({received:size});last=Date.now();}}}finally{await handle.close();}
