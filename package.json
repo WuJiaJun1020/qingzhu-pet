@@ -1,6 +1,6 @@
 {
   "name": "qingzhu-pet",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "青竹桌宠：桌面角色动画、交互测试与透明素材处理工具",
   "main": "app/main.cjs",
@@ -19,7 +19,8 @@
     "test:python": "python -m unittest discover -s tests -p *_test.py",
     "optimize:assets": "python 处理工具/optimize_assets.py",
     "pack:characters": "python 处理工具/pack_characters.py --output-root release/build",
-    "dist:win": "electron-builder --win nsis --x64 --publish never"
+    "dist:win": "electron-builder --win nsis --x64 --publish never",
+    "predist:win": "node scripts/build-installer-art.cjs"
   },
   "dependencies": {
     "koffi": "3.3.2",
@@ -46,7 +47,7 @@
       "assets/**/*",
       "package.json",
       "LICENSE",
-      "ASSETS.md",
+      "README.md",
       "!app/package.json",
       "!assets/**/*.tmp"
     ],
@@ -72,9 +73,13 @@
       "runAfterFinish": false,
       "deleteAppDataOnUninstall": false,
       "installerLanguages": [
-        "zh_CN",
-        "en_US"
-      ]
+        "zh_CN"
+      ],
+      "language": "2052",
+      "include": "build/installer.nsh",
+      "installerHeader": "build/installerHeader.bmp",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/installerSidebar.bmp"
     }
   }
 }
