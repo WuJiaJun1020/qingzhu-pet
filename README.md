@@ -2,7 +2,7 @@
 
 Windows 桌面小伙伴，支持 26 位人物、109 套动画。默认内置韩立，其他人物按需安装。
 
-**[下载安装包 v0.3.3](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/v0.3.3/qingzhu-pet-0.3.3-windows-x64-setup.exe)** · [版本说明与校验](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.3)
+**[下载安装包 v0.3.4](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/v0.3.4/qingzhu-pet-0.3.4-windows-x64-setup.exe)** · [版本说明与校验](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.4)
 
 Windows 10 / 11 x64，可选安装路径，无需额外运行环境。安装包未签名，可能提示未知发布者。
 
@@ -41,6 +41,7 @@ Node.js 22+：`npm ci` → `npm start`；测试 `npm test`，打包 `npm run dis
 
 窗口验收：`npm run verify`，使用同级「桌宠测试器」当前客户端和人物副本。素材工具见 `处理工具/`。
 
-## 授权
+## 素材来源
 
-原创代码和技术文档采用 [MIT](LICENSE)。角色、图标、动画等视觉素材不在 MIT 授权范围内，相关权利归各自权利人，使用需另行确认授权。第三方组件保留各自许可证。
+- 图片、图标：使用豆包和 GPT 生成。
+- 动画视频：使用 MiniMax H3 生成，并进行帧提取、透明处理与修补。

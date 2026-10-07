@@ -4,7 +4,7 @@ const {createSoftwareUpdater}=require('./software-updater.cjs');
 function createUpdateService({data,installed,version,packs,fetch,downloadFetch,onChange=()=>{},onInstalled=()=>{},canUpdate=()=>true,setTimeoutFn=setTimeout,clearTimeoutFn=clearTimeout}){
  const configFile=path.join(data,'updates.json');let preferences={autoCharacters:installed,autoSoftware:installed};
  try{const saved=JSON.parse(fs.readFileSync(configFile));for(const key of Object.keys(preferences))if(typeof saved[key]==='boolean')preferences[key]=installed&&saved[key];}catch{}
- let characterBusy=false,pending=false,cancelled=false,stopped=false,timer,retry;
+ let characterBusy=false,pending=false,cancelled=false,stopped=false,timer,retry,cleanupTimer;
  let characters={status:'idle',message:'',updated:[],added:[]};
  const software=createSoftwareUpdater({data,version,installed,fetch,downloadFetch,onChange});
  const emit=patch=>{characters={...characters,...patch};onChange();};
@@ -34,8 +34,13 @@ function createUpdateService({data,installed,version,packs,fetch,downloadFetch,o
   }catch(error){emit({status:'error',message:error.message});throw error;}finally{characterBusy=false;}
  }
  async function scheduled(){if(stopped)return;await Promise.allSettled([preferences.autoCharacters?checkCharacters():null,preferences.autoSoftware?software.check():null]);if(!stopped){timer=setTimeoutFn(scheduled,6*60*60*1000);timer?.unref?.();}}
- function start(){if(!installed||stopped||timer)return;timer=setTimeoutFn(scheduled,15000);timer?.unref?.();}
- function stop(){stopped=true;pending=false;clearTimeoutFn(timer);clearTimeoutFn(retry);packs.cancel();software.cancel();}
+ async function cleanupDownloads(){
+  if(stopped)return;
+  const pendingCleanup=await software.cleanupInstalledDownloads();
+  if(pendingCleanup&&!stopped){cleanupTimer=setTimeoutFn(cleanupDownloads,60000);cleanupTimer?.unref?.();}
+ }
+ function start(){if(!installed||stopped||timer)return;timer=setTimeoutFn(scheduled,15000);timer?.unref?.();cleanupTimer=setTimeoutFn(cleanupDownloads,0);cleanupTimer?.unref?.();}
+ function stop(){stopped=true;pending=false;clearTimeoutFn(timer);clearTimeoutFn(retry);clearTimeoutFn(cleanupTimer);packs.cancel();software.cancel();}
  function snapshot(){return {installed,preferences:{...preferences},characters:{...characters},software:software.snapshot()};}
  return {snapshot,configure,checkCharacters,software,start,stop,get characterBusy(){return characterBusy;},cancelCharacters:()=>{cancelled=true;pending=false;clearTimeoutFn(retry);packs.cancel();}};
 }

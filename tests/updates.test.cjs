@@ -35,6 +35,30 @@ test('software cancellation leaves no partial executable',async t=>{
  up=createSoftwareUpdater({data:folder(t),version:'0.3.0',installed:true,fetch:async()=>new Response(JSON.stringify([release()])),downloadFetch:async()=>({ok:true,body:(async function*(){yield bytes.subarray(0,2);up.cancel();yield bytes.subarray(2);})()})});
  await up.check();await assert.rejects(up.download(),/取消/);assert.equal(up.snapshot().message,'下载已取消');
 });
+test('successful installed-version startup removes only completed current/older cached installers',async t=>{
+ const data=folder(t),cache=path.join(data,'software-updates');fs.mkdirSync(cache);
+ const old='qingzhu-pet-0.3.3-windows-x64-setup.exe',current='qingzhu-pet-0.3.4-windows-x64-setup.exe',future='qingzhu-pet-0.10.0-windows-x64-setup.exe';
+ const preserved=[future,'notes.txt','setup.exe',old+'.download.partial','qingzhu-pet-9007199254740992.0.0-windows-x64-setup.exe'];
+ for(const name of [old,current,...preserved])fs.writeFileSync(path.join(cache,name),bytes);
+ const directory='qingzhu-pet-0.1.0-windows-x64-setup.exe';fs.mkdirSync(path.join(cache,directory));fs.writeFileSync(path.join(cache,directory,'keep.txt'),'keep');
+ const up=createSoftwareUpdater({data,version:'0.3.4',installed:true});
+ assert.equal(await up.cleanupInstalledDownloads(),false);assert.deepEqual(fs.readdirSync(cache).sort(),[...preserved,directory].sort());
+ assert.equal(await up.cleanupInstalledDownloads(),false);assert.equal(up.snapshot().status,'idle');
+ const absent=createSoftwareUpdater({data:folder(t),version:'0.3.4',installed:true});assert.equal(await absent.cleanupInstalledDownloads(),false);
+});
+test('development retains update cache and installed cleanup runs even when automatic checks are disabled',async t=>{
+ const data=folder(t),cache=path.join(data,'software-updates');fs.mkdirSync(cache);const file=path.join(cache,'qingzhu-pet-0.3.3-windows-x64-setup.exe');fs.writeFileSync(file,bytes);
+ const dev=createSoftwareUpdater({data,version:'0.3.4',installed:false});assert.equal(await dev.cleanupInstalledDownloads(),false);assert.ok(fs.existsSync(file));
+ const timers=[],service=createUpdateService({data,version:'0.3.4',installed:true,packs:packsFixture(),fetch:()=>{throw Error('must not fetch');},setTimeoutFn:(fn,delay)=>{const timer={fn,delay,unref(){}};timers.push(timer);return timer;},clearTimeoutFn:()=>{}});
+ service.configure({autoCharacters:false,autoSoftware:false});service.start();await timers.find(timer=>timer.delay===0).fn();assert.equal(fs.existsSync(file),false);
+ await timers.find(timer=>timer.delay===15000).fn();service.stop();
+});
+test('occupied update-cache files are retried later and cleanup retries stop with the service',async t=>{
+ const data=folder(t),timers=[],cleared=[],service=createUpdateService({data,version:'0.3.4',installed:true,packs:packsFixture(),setTimeoutFn:(fn,delay)=>{const timer={fn,delay,unref(){}};timers.push(timer);return timer;},clearTimeoutFn:timer=>cleared.push(timer)});
+ let attempts=0;service.software.cleanupInstalledDownloads=async()=>++attempts===1;
+ service.start();await timers.find(timer=>timer.delay===0).fn();const retry=timers.find(timer=>timer.delay===60000);assert.ok(retry);await retry.fn();assert.equal(attempts,2);assert.equal(timers.filter(timer=>timer.delay===60000).length,1);
+ service.stop();assert.ok(cleared.includes(retry));await retry.fn();assert.equal(attempts,2);
+});
 test('GitHub API rate limits fall back to the public latest software release and verified checksum',async t=>{
  const row=release(),calls=[];
  const up=createSoftwareUpdater({data:folder(t),version:'0.3.0',installed:true,fetch:async(url,options)=>{calls.push(url);if(url.startsWith('https://api.github.com/'))return new Response('',{status:403});assert.equal(options.method,'HEAD');return url.endsWith('/latest')?{ok:true,url:'https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.4.0'}:{ok:true,headers:new Headers({'content-length':String(bytes.length)})};},downloadFetch:async url=>new Response(url.endsWith('SHA256SUMS.txt')?sha(bytes)+'  '+row.assets[0].name:bytes)});

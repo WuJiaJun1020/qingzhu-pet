@@ -37,6 +37,22 @@ function createSoftwareUpdater({data,version,installed,fetch,downloadFetch=fetch
  let state={status:'idle',version,availableVersion:null,received:0,total:0,message:''},candidate=null,ready=null,busy=false,controller;
  const emit=patch=>{state={...state,...patch};onChange();};
  const exclusive=async fn=>{if(busy)throw Error('软件更新正在处理');busy=true;try{return await fn();}finally{busy=false;}};
+ async function cleanupInstalledDownloads(){
+  if(!installed||!validVersion(version))return false;
+  const folder=path.join(data,'software-updates');let entries;
+  try{
+   // Only remove our own completed installers in the real update-cache directory.
+   const directory=await fs.lstat(folder);if(!directory.isDirectory()||directory.isSymbolicLink())return false;
+   entries=await fs.readdir(folder,{withFileTypes:true});
+  }catch(error){return error.code!=='ENOENT';}
+  let pending=false;
+  for(const entry of entries){
+   const cachedVersion=entry.name.match(/^qingzhu-pet-(\d+\.\d+\.\d+)-windows-x64-setup\.exe$/)?.[1];
+   if(!entry.isFile()||!validVersion(cachedVersion)||compareVersions(cachedVersion,version)>0)continue;
+   try{await fs.unlink(path.join(folder,entry.name));}catch(error){if(error.code!=='ENOENT')pending=true;}
+  }
+  return pending;
+ }
  async function publicLatest(){
   const options={method:'HEAD',cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20000)])};
   const response=await fetch(LATEST,options);
@@ -96,6 +112,6 @@ function createSoftwareUpdater({data,version,installed,fetch,downloadFetch=fetch
   catch{ready=null;emit({status:'error',message:'安装包缺失或已改变，请重新下载。'});throw Error('安装包校验失败');}
   return ready.file;
  }
- return {check,download,prepareInstall,cancel:()=>controller?.abort(),get busy(){return busy;},snapshot:()=>({...state,installed})};
+ return {check,download,prepareInstall,cleanupInstalledDownloads,cancel:()=>controller?.abort(),get busy(){return busy;},snapshot:()=>({...state,installed})};
 }
 module.exports={findRelease,createSoftwareUpdater};

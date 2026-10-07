@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-module.exports=async({panel,player,snapshot,data,out,checks})=>{
+module.exports=async({panel,player,updates,snapshot,data,out,checks})=>{
  const ui=code=>panel.webContents.executeJavaScript(code),pause=ms=>new Promise(r=>setTimeout(r,ms));
  const wait=async fn=>{for(let i=0;i<600;i++){if(await fn())return;await pause(25);}throw Error('更新验收超时');};
  await wait(()=>ui('!!window.petAPI && document.querySelectorAll(".character-card").length>0'));
@@ -54,6 +54,11 @@ module.exports=async({panel,player,snapshot,data,out,checks})=>{
  await ui('document.getElementById("auto-character-updates").click();document.getElementById("auto-software-updates").click()');
  await wait(()=>Promise.resolve(!snapshot().updates.preferences.autoCharacters&&!snapshot().updates.preferences.autoSoftware));
  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(data,'updates.json'))),{autoCharacters:false,autoSoftware:false});
+ const cache=path.join(data,'software-updates'),old=path.join(cache,'qingzhu-pet-0.0.0-windows-x64-setup.exe'),current=path.join(cache,'qingzhu-pet-'+snapshot().updates.software.version+'-windows-x64-setup.exe'),future=path.join(cache,'qingzhu-pet-999.0.0-windows-x64-setup.exe'),other=path.join(cache,'keep.txt');
+ for(const file of [old,current,other])fs.writeFileSync(file,'isolated cleanup fixture');
+ updates.start();await wait(()=>Promise.resolve(!fs.existsSync(old)&&!fs.existsSync(current)));updates.stop();
+ assert.ok(fs.existsSync(future));assert.ok(fs.existsSync(other));
+ checks.push('安装版启动自动删除当前及旧版本更新缓存，保留未来安装包与其他文件；关闭自动检查仍会清理');
  await ui('document.getElementById("error").hidden=true;document.getElementById("software-version").scrollIntoView({block:"center"})');await pause(150);
  fs.writeFileSync(path.join(out,'安装版更新验收.png'),(await panel.webContents.capturePage()).toPNG());
  checks.push('自动人物更新、自动软件检查可分别关闭且设置持久保存');

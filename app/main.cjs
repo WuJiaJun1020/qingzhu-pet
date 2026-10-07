@@ -444,7 +444,7 @@ else {
     pet.on('blur', () => { if (!verifying && !surface.hosted) endDrag(); });
     if(!verifying)updates.start();
     if(!verifying&&process.argv.includes('--edit-frames'))await showEditor();
-    if (verifying) await require('../tests/verify-client.cjs')({app,pet,player,surface,panel,showPanel,hidePanel,charactersDirectory,movePet,update,snapshot,root,data,onDragMove,showEditor,getEditor:()=>editor,sourceCharactersDirectory,getPetMenu:()=>petMenu,getPublisher:()=>developmentTools?.getWindow()});
+    if (verifying) await require('../tests/verify-client.cjs')({app,pet,player,surface,panel,showPanel,hidePanel,charactersDirectory,movePet,update,updates,snapshot,root,data,onDragMove,showEditor,getEditor:()=>editor,sourceCharactersDirectory,getPetMenu:()=>petMenu,getPublisher:()=>developmentTools?.getWindow()});
   }).catch(error => { fs.writeFileSync(path.join(data, '错误日志.txt'), error.stack || String(error)); console.error(error); if(verifying)app.exit(1);else app.quit(); });
 }
 app.on('before-quit', event => { if(editor&&!editor.isDestroyed()){event.preventDefault();quitRequested=true;editor.close();return;} quitting = true; updates?.stop(); clearTimeout(panelSleepTimer); panelWindowState?.dispose(); clearInterval(timer); dragControl?.dispose(); if (pet && !pet.isDestroyed() && !surface?.hosted) savedPosition = { x: pet.getBounds().x, y: pet.getBounds().y }; save(); });

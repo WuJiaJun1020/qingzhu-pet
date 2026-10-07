@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,snapshot,root,data,onDragMove,movePet,charactersDirectory,sourceCharactersDirectory,showEditor,getEditor,getPetMenu,getPublisher})=>{
+module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,updates,snapshot,root,data,onDragMove,movePet,charactersDirectory,sourceCharactersDirectory,showEditor,getEditor,getPetMenu,getPublisher})=>{
   const out=path.join(root,'tests/results'),checks=[],errors=[];
   const runtime={appPath:app.getAppPath(),electronIsPackaged:app.isPackaged,data,charactersDirectory,sourceCharactersDirectory};
   const js=code=>player.webContents.executeJavaScript(code),ui=code=>panel.webContents.executeJavaScript(code);
@@ -14,7 +14,7 @@ module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,sn
     panel.setMinimizable(false);panel.setClosable(false);
     await wait(()=>Promise.resolve(surface.hosted));await wait(async()=>await rendered()>1);
     if(process.argv.includes('--verify-installed')){
-      await require('./verify-updates.cjs')({panel,player,snapshot,data,out,checks});
+      await require('./verify-updates.cjs')({panel,player,updates,snapshot,data,out,checks});
       fs.writeFileSync(path.join(out,'当前客户端验收.json'),JSON.stringify({passed:true,runtime,checks},null,2));panel.setClosable(true);app.quit();return;
     }
     if(process.argv.includes('--publisher-check')){
