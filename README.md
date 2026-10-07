@@ -2,7 +2,7 @@
 
 Windows 桌面小伙伴，支持 26 位人物、109 套动画。默认内置韩立，其他人物按需安装。
 
-**[下载安装包 v0.3.0](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/v0.3.0/qingzhu-pet-0.3.0-windows-x64-setup.exe)** · [版本说明与校验](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.0)
+**[下载安装包 v0.3.1](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/v0.3.1/qingzhu-pet-0.3.1-windows-x64-setup.exe)** · [版本说明与校验](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.1)
 
 Windows 10 / 11 x64，可选安装路径，无需额外运行环境。安装包未签名，可能提示未知发布者。
 
@@ -15,6 +15,7 @@ Windows 10 / 11 x64，可选安装路径，无需额外运行环境。安装包�
 - 选择人物 →「邀至桌面」；拖动移动，右键设置或暂停，托盘可找回。
 - 支持缩放、动作切换、逐帧检查和透明帧修补；修补保存会直接更新人物包。
 - 安装版数据在 `%APPDATA%/青竹桌宠/`，升级保留人物和设置。
+- 设置中可检查人物和软件更新；软件下载安装包后点击「退出并安装」。
 
 ## 人物资源
 

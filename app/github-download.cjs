@@ -7,18 +7,21 @@ function createGitHubDownload(fetch){
     const link=new URL(url),match=link.pathname.match(/^\/WuJiaJun1020\/qingzhu-pet\/releases\/download\/([^/]+)\/([^/]+)$/);
     if(link.origin!=='https://github.com'||!match)throw new Error('人物下载地址不合法');
     const [,tag,name]=match;
-    let assets=releases.get(tag);
+    const cached=releases.get(tag);
+    let assets=cached&&Date.now()-cached.time<60000&&cached.assets.some(a=>a.name===decodeURIComponent(name))?cached.assets:null;
     if(!assets){
       const response=await fetch(`https://api.github.com/repos/WuJiaJun1020/qingzhu-pet/releases/tags/${tag}`,{...options,headers:{...headers,Accept:'application/vnd.github+json'}});
       if(!response.ok)return fetch(url,{...options,headers});
       assets=(await response.json()).assets;
       if(!Array.isArray(assets))throw new Error('人物发布信息不完整');
-      releases.set(tag,assets);
+      releases.set(tag,{time:Date.now(),assets});
     }
     const asset=assets.find(a=>a.name===decodeURIComponent(name));
     if(!asset)return fetch(url,{...options,headers});
     if(!/^https:\/\/api\.github\.com\/repos\/WuJiaJun1020\/qingzhu-pet\/releases\/assets\/\d+$/.test(asset.url))throw new Error('人物资源下载接口不合法');
-    return fetch(asset.url,{...options,headers:{...headers,Accept:'application/octet-stream'}});
+    const response=await fetch(asset.url,{...options,headers:{...headers,Accept:'application/octet-stream'}});
+    if(response.status===404){releases.delete(tag);return fetch(url,{...options,headers});}
+    return response;
   };
 }
 module.exports={createGitHubDownload};

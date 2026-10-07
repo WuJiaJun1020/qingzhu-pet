@@ -98,3 +98,77 @@ test('removal rejects escaped index paths and restores resources when index comm
   assert.deepEqual(fs.readFileSync(file),original);assert.deepEqual(fs.readFileSync(path.join(folder,filename)),IMAGE);
   assert.equal(f.manager.load().installed.has('remote'),true);
 });
+
+test('development can import an unpublished character; release builds reject it',async t=>{
+ const f=fixture(t),bytes=pack(h=>{h.id='new-person';h.manifest=manifest('new-person');}),file=path.join(f.root,'new-person.qzpet');fs.writeFileSync(file,bytes);
+ await assert.rejects(f.manager.importFile(file),/人物不存在/);
+ const developer=createPackManager({root:f.root,data:f.data,allowUnlistedImport:true});
+ await developer.importFile(file);assert.equal(developer.load().installed.has('new-person'),true);
+ assert.equal(developer.list().entries.find(p=>p.id==='new-person').installed,true);
+});
+
+test('remote updates survive restart, keep the old installed folder and leave catalog intact on failure',async t=>{
+ const f=fixture(t);await f.manager.install('remote');
+ const original=f.manager.load().manifest.actions.find(a=>a.id==='remote-idle').assetsRoot;
+ const nextBytes=pack(h=>{h.manifest.actions[0].frames[0].durationMs=80;});
+ const catalog=JSON.parse(fs.readFileSync(path.join(f.assets,'character-packs.json')));
+ catalog.packs[0]={...catalog.packs[0],sha256:sha(nextBytes),bytes:nextBytes.length,url:'https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/new/remote.qzpet'};
+ let offline=false;
+ const manager=createPackManager({root:f.root,data:f.data,fetch:async()=>({ok:true,body:[nextBytes]}),catalogFetch:async()=>{if(offline)throw Error('offline');return {ok:true,body:[Buffer.from(JSON.stringify(catalog))]};}});
+ await manager.checkUpdates();assert.equal(manager.list().entries[0].updateAvailable,true);
+ const restarted=createPackManager({root:f.root,data:f.data});assert.equal(restarted.list().entries[0].updateAvailable,true);
+ await manager.install('remote');assert.equal(manager.list().entries[0].updateAvailable,false);assert.ok(fs.existsSync(original));
+ assert.notEqual(manager.load().manifest.actions.find(a=>a.id==='remote-idle').assetsRoot,original);
+ const cache=fs.readFileSync(path.join(f.data,'character-catalog.json'));offline=true;await assert.rejects(manager.checkUpdates(),/offline/);
+ assert.deepEqual(fs.readFileSync(path.join(f.data,'character-catalog.json')),cache);
+});
+
+test('installed builds update builtin via data overlay, include new actions and leave bundled files untouched',async t=>{
+ const f=fixture(t),original=fs.readFileSync(path.join(f.assets,'manifest.json'));
+ const bytes=pack(h=>{h.id='builtin';h.manifest=manifest('builtin');const a=structuredClone(h.manifest.actions[3]);a.id='builtin-new-action';h.manifest.actions.push(a);h.manifest.characters[0].actions.push(a.id);});
+ const catalog={version:1,packs:[{id:'builtin',name:'Builtin',bytes:bytes.length,sha256:sha(bytes),url:'https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/new/builtin.qzpet'}]};
+ const manager=createPackManager({root:f.root,data:f.data,allowBuiltinUpdates:true,fetch:async()=>new Response(bytes),catalogFetch:async()=>new Response(JSON.stringify(catalog))});
+ await manager.checkUpdates();await manager.install('builtin');const lib=manager.load();assert.equal(lib.manifest.characters.length,1);assert.ok(lib.manifest.actions.some(a=>a.id==='builtin-new-action'));assert.deepEqual(fs.readFileSync(path.join(f.assets,'manifest.json')),original);
+ const restarted=createPackManager({root:f.root,data:f.data,allowBuiltinUpdates:true});assert.ok(restarted.load().manifest.actions.some(a=>a.id==='builtin-new-action'));
+});
+
+test('incompatible manifests and conflicting action IDs never replace an installed index',async t=>{
+ const f=fixture(t);await f.manager.install('remote');const indexFile=path.join(f.data,'characters/index.json'),original=fs.readFileSync(indexFile);
+ for(const change of [h=>{h.manifest.minAppVersion='999.0.0';},h=>{h.manifest.actions[3].id='builtin-wave';h.manifest.characters[0].actions[3]='builtin-wave';}]){
+  const bytes=pack(change),catalog={version:1,packs:[{id:'remote',name:'Remote',bytes:bytes.length,sha256:sha(bytes),url:'https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/new/remote.qzpet'}]};
+  const manager=createPackManager({root:f.root,data:f.data,appVersion:'0.3.0',fetch:async()=>new Response(bytes),catalogFetch:async()=>new Response(JSON.stringify(catalog))});
+  await manager.checkUpdates();await assert.rejects(manager.install('remote'));assert.deepEqual(fs.readFileSync(indexFile),original);assert.ok(manager.load().installed.has('remote'));
+ }
+});
+
+test('catalog minimum version and unknown pack formats are shown as incompatible',async t=>{
+ const f=fixture(t),catalog=JSON.parse(fs.readFileSync(path.join(f.assets,'character-packs.json')));catalog.packs[0].minAppVersion='0.10.0';
+ const manager=createPackManager({root:f.root,data:f.data,appVersion:'0.9.0',catalogFetch:async()=>new Response(JSON.stringify(catalog))});await manager.checkUpdates();assert.equal(manager.list().entries[0].compatible,false);await assert.rejects(manager.install('remote'),/先更新软件/);
+ delete catalog.packs[0].minAppVersion;catalog.packs[0].packFormat='future-v2';await manager.checkUpdates();assert.equal(manager.list().entries[0].compatible,false);
+});
+
+test('temporary Windows file locks are retried before committing a character update',async t=>{
+ const f=fixture(t),rename=fs.promises.rename;let blocked=0;
+ t.mock.method(fs.promises,'rename',async(from,to)=>{if(from.includes('.staging')&&blocked++<2)throw Object.assign(Error('scanner lock'),{code:'EPERM'});return rename(from,to);});
+ await f.manager.install('remote');assert.ok(f.manager.load().installed.has('remote'));assert.ok(blocked>=3);
+});
+
+test('index commit failure retains the old package and removes uncommitted replacement',async t=>{
+ const f=fixture(t);await f.manager.install('remote');const indexFile=path.join(f.data,'characters/index.json'),before=fs.readFileSync(indexFile),folders=fs.readdirSync(path.join(f.data,'characters/remote'));
+ const bytes=pack(h=>{h.manifest.actions[0].frames[0].durationMs=70;}),catalog=JSON.parse(fs.readFileSync(path.join(f.assets,'character-packs.json')));catalog.packs[0].sha256=sha(bytes);catalog.packs[0].bytes=bytes.length;
+ const manager=createPackManager({root:f.root,data:f.data,fetch:async()=>new Response(bytes),catalogFetch:async()=>new Response(JSON.stringify(catalog))});await manager.checkUpdates();
+ const rename=fs.promises.rename;t.mock.method(fs.promises,'rename',async(from,to)=>{if(to===indexFile)throw Object.assign(Error('disk full'),{code:'ENOSPC'});return rename(from,to);});
+ await assert.rejects(manager.install('remote'),/disk full/);assert.deepEqual(fs.readFileSync(indexFile),before);assert.deepEqual(fs.readdirSync(path.join(f.data,'characters/remote')),folders);assert.equal(fs.existsSync(indexFile+'.tmp'),false);
+});
+
+test('development compares actual content instead of stale install hashes and can pull over local edits',async t=>{
+ const {buildCharacter,scanCharacters}=require('../developer/pack-builder.cjs'),f=fixture(t);await f.manager.install('remote');
+ const directory=path.join(f.data,'characters'),built=await buildCharacter(directory,'remote'),catalog={version:1,packs:[{...built.entry,url:'https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/test/remote.qzpet'}]};
+ const indexFile=path.join(directory,'index.json'),before=fs.readFileSync(indexFile);
+ const manager=createPackManager({root:f.root,data:f.data,fetch:async()=>new Response(built.bytes),catalogFetch:async()=>new Response(JSON.stringify(catalog)),inspectInstalled:entries=>scanCharacters(directory,{packs:entries},new Set(['builtin']))});
+ assert.equal(manager.list().entries[0].updateAvailable,false);await manager.checkUpdates();assert.equal(manager.list().entries[0].updateAvailable,false);assert.deepEqual(fs.readFileSync(indexFile),before);
+ const index=JSON.parse(before);index.installed.remote.sha256=built.entry.sha256;fs.writeFileSync(indexFile,JSON.stringify(index));
+ const manifestFile=path.join(directory,index.installed.remote.directory,'manifest.json'),local=JSON.parse(fs.readFileSync(manifestFile));local.actions[0].frames[0].durationMs=90;fs.writeFileSync(manifestFile,JSON.stringify(local));
+ await manager.checkUpdates();assert.equal(manager.list().entries[0].updateAvailable,true);
+ await manager.install('remote');assert.equal(manager.load().manifest.actions.find(a=>a.id==='remote-idle').frames[0].durationMs,50);
+});

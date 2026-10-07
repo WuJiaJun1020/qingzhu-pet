@@ -20,6 +20,9 @@ const trayIcon = path.join(root, 'assets', 'app.png');
 const verifying=process.argv.includes('--verify-client');
 // Installed application files are read-only; keep downloads and edits per user.
 const packagedRuntime=isPackagedRuntime({isPackaged:app.isPackaged,appPath:app.getAppPath()});
+const installedMode=packagedRuntime||(verifying&&process.argv.includes('--verify-installed'));
+const development=!installedMode&&fs.existsSync(path.join(root,'developer/main.cjs'));
+let developmentTools;
 const userDataDirectory=packagedRuntime ? path.join(app.getPath('appData'),'青竹桌宠') : path.join(root,'数据');
 const data = verifying ? path.join(root,'tests/results/client-data-'+Date.now()) : userDataDirectory;
 fs.mkdirSync(data, { recursive: true });
@@ -31,12 +34,18 @@ let pet, player, surface, panelReady=false, panel, editor, tray, timer, dragCont
 let settings = defaults(), savedPosition = null, revision = 0, petSize = null, displaySize = null;
 // Keep release downloads compatible with HTTP/1.1 proxies.
 app.commandLine.appendSwitch('disable-http2');
+let updateFixture;
 const downloadPackage=require('./github-download.cjs').createGitHubDownload((...args)=>net.fetch(...args));
 const sourceCharactersDirectory=characterDirectory({root,data:userDataDirectory,packaged:packagedRuntime,verifying:false});
 const charactersDirectory=verifying?path.join(data,'characters'):sourceCharactersDirectory;
 if(verifying)require('../tests/client-fixtures.cjs')(sourceCharactersDirectory,charactersDirectory);
+if(verifying&&installedMode)updateFixture=require('../tests/update-fixture.cjs')({root,charactersDirectory});
+const fetchRemote=(...args)=>updateFixture?updateFixture.fetch(...args):net.fetch(...args);
+const fetchDownload=(...args)=>updateFixture?updateFixture.download(...args):downloadPackage(...args);
 const frameWriter=createFrameWriter({data,roots:verifying?[charactersDirectory]:[charactersDirectory,path.join(root,'assets')]});
-const packs=createPackManager({root,data,charactersDirectory,fetch:downloadPackage,onChange:()=>{if(panel)broadcast();}});
+const inspectInstalled=development?entries=>require('../developer/pack-builder.cjs').scanCharacters(charactersDirectory,{packs:entries},new Set(JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'))).characters.map(c=>c.id))):undefined;
+const packs=createPackManager({root,data,charactersDirectory,fetch:fetchDownload,catalogFetch:fetchRemote,inspectInstalled,allowUnlistedImport:development,allowBuiltinUpdates:installedMode,appVersion:app.getVersion(),onChange:()=>{if(panel)broadcast();}});
+let updates;
 let manifest,catalog,allActions,variants;
 const actionCounts=Object.create(null);
 function reloadLibrary(){
@@ -83,7 +92,7 @@ try {
   if (Number.isFinite(saved.position?.x) && Number.isFinite(saved.position?.y)) savedPosition = saved.position;
 } catch { /* First launch uses defaults. */ }
 function snapshot() {
-  return { presentation:surface?.mode||'desktop', settings, revision, packs:packs.list(), characters: catalog.list(), character: {id: character.id, name: character.name}, interactions: character.interactions, interactionPhase: dragAnimations.phase, actionCounts: {...actionCounts}, idleId: idleAction(actions).id, starts: actions.map(a => { const v = currentAnimation(a.id); return { id: a.id, variant: v.variant, frame: v.frames[0] }; }), display: displaySize, actions: actions.map(a => ({ id: a.id, title: a.title, role: a.role, width: a.width, height: a.height, count: a.frames.length, duration: a.frames.reduce((s,f) => s + f.durationMs, 0) })), animation: currentAnimation() };
+  return { development,updates:updates?.snapshot(),presentation:surface?.mode||'desktop', settings, revision, packs:packs.list(), characters: catalog.list(), character: {id: character.id, name: character.name}, interactions: character.interactions, interactionPhase: dragAnimations.phase, actionCounts: {...actionCounts}, idleId: idleAction(actions).id, starts: actions.map(a => { const v = currentAnimation(a.id); return { id: a.id, variant: v.variant, frame: v.frames[0] }; }), display: displaySize, actions: actions.map(a => ({ id: a.id, title: a.title, role: a.role, width: a.width, height: a.height, count: a.frames.length, duration: a.frames.reduce((s,f) => s + f.durationMs, 0) })), animation: currentAnimation() };
 }
 function save() {
   const body = { settings, position: savedPosition };
@@ -259,7 +268,39 @@ else {
       win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       win.webContents.on('will-navigate', e => e.preventDefault());
     }
-    handle('snapshot', () => snapshot());
+    handle('snapshot', () => ({...snapshot(),development}));
+    const panelOnly=event=>{if(event.sender!==panel.webContents)throw Error('请从主界面操作更新');};
+    updates=require('./update-service.cjs').createUpdateService({data,installed:installedMode,version:app.getVersion(),packs,fetch:fetchRemote,downloadFetch:fetchDownload,
+      onChange:()=>{broadcast();if(tray)tray.setToolTip('青竹桌宠'+(updates?.snapshot().software.availableVersion?' · 有软件更新':''));},
+      onInstalled:()=>installedLibrary(),canUpdate:()=>!frameWriter.busy&&!(editor&&!editor.isDestroyed())&&!panelImporting});
+    handle('pack-check-updates',async event=>{panelOnly(event);await updates.checkCharacters();return snapshot();});
+    handle('update-preferences',(event,patch)=>{panelOnly(event);updates.configure(patch);return snapshot();});
+    handle('software-check',async event=>{panelOnly(event);await updates.software.check();return snapshot();});
+    handle('software-download',async event=>{panelOnly(event);await updates.software.download();return snapshot();});
+    handle('software-cancel',event=>{panelOnly(event);updates.software.cancel();});
+    handle('software-install',async event=>{
+      panelOnly(event);if(!installedMode)throw Error('请在安装版中更新软件');
+      if(frameWriter.busy||editor&&!editor.isDestroyed()||packs.busy||updates.characterBusy)throw Error('请先完成当前人物操作并关闭修补窗口');
+      const installer=await updates.software.prepareInstall();
+      if(verifying)throw Error('自动验收仅验证安装包，禁止启动安装程序');
+      await new Promise((resolve,reject)=>{const child=require('node:child_process').spawn(installer,[],{detached:true,stdio:'ignore',windowsHide:false});child.once('error',reject);child.once('spawn',()=>{child.unref();resolve();});});
+      app.quit();
+    });
+    handle('pack-update',async(event,id)=>{
+      if(event.sender!==panel.webContents)throw Error('请从主界面更新人物');
+      if(frameWriter.busy||editor&&!editor.isDestroyed())throw Error('请先保存并关闭修补工具');
+      const entry=packs.list().entries.find(p=>p.id===id);
+      if(!entry?.updateAvailable)throw Error('此人物没有可用更新');
+      const answer=await dialog.showMessageBox(panel,{type:'question',buttons:['取消','更新人物'],defaultId:0,cancelId:0,
+        message:'拉取「'+entry.name+'」？',detail:'将使用 GitHub 上的人物内容替换本地内容，本地修补不会合并。当前人物资源文件夹会保留备份。'});
+      if(answer.response!==1)return snapshot();
+      await packs.install(id);return installedLibrary();
+    });
+    if(development)developmentTools=require('../developer/main.cjs')({app,BrowserWindow,ipcMain,panel,root,data,charactersDirectory,fetch:(...args)=>net.fetch(...args),verifying});
+    handle('developer-publisher',event=>{
+      if(!development||!developmentTools)throw Error('此功能仅供本地开发版使用');
+      return developmentTools.open(event);
+    });
     handle('pet-context-menu',event=>{
       if(event.sender!==player.webContents)throw Error('请从人物打开菜单');
       endDrag();petMenu?.closePopup();
@@ -317,7 +358,7 @@ else {
         await packs.importFile(selected.filePaths[0]);return installedLibrary();
       } finally {panelImporting=false;}
     });
-    handle('pack-cancel',()=>packs.cancel());
+    handle('pack-cancel',()=>updates.cancelCharacters());
     handle('panel', () => showPanel());
     handle('panel-hide', event => {if(event.sender===panel.webContents)hidePanel();});
     handle('panel-reset-size', event => {if(event.sender!==panel.webContents)return;endDrag();return panelWindowState.reset();});
@@ -383,9 +424,10 @@ else {
       } catch { /* Window may close during a poll. */ } finally { polling = false; }
     }, 70);
     pet.on('blur', () => { if (!verifying && !surface.hosted) endDrag(); });
+    if(!verifying)updates.start();
     if(!verifying&&process.argv.includes('--edit-frames'))await showEditor();
-    if (verifying) await require('../tests/verify-client.cjs')({app,pet,player,surface,panel,showPanel,hidePanel,charactersDirectory,movePet,update,snapshot,root,data,onDragMove,showEditor,getEditor:()=>editor,sourceCharactersDirectory,getPetMenu:()=>petMenu});
+    if (verifying) await require('../tests/verify-client.cjs')({app,pet,player,surface,panel,showPanel,hidePanel,charactersDirectory,movePet,update,snapshot,root,data,onDragMove,showEditor,getEditor:()=>editor,sourceCharactersDirectory,getPetMenu:()=>petMenu,getPublisher:()=>developmentTools?.getWindow()});
   }).catch(error => { fs.writeFileSync(path.join(data, '错误日志.txt'), error.stack || String(error)); console.error(error); if(verifying)app.exit(1);else app.quit(); });
 }
-app.on('before-quit', event => { if(editor&&!editor.isDestroyed()){event.preventDefault();quitRequested=true;editor.close();return;} quitting = true; clearTimeout(panelSleepTimer); panelWindowState?.dispose(); clearInterval(timer); dragControl?.dispose(); if (pet && !pet.isDestroyed() && !surface?.hosted) savedPosition = { x: pet.getBounds().x, y: pet.getBounds().y }; save(); });
+app.on('before-quit', event => { if(editor&&!editor.isDestroyed()){event.preventDefault();quitRequested=true;editor.close();return;} quitting = true; updates?.stop(); clearTimeout(panelSleepTimer); panelWindowState?.dispose(); clearInterval(timer); dragControl?.dispose(); if (pet && !pet.isDestroyed() && !surface?.hosted) savedPosition = { x: pet.getBounds().x, y: pet.getBounds().y }; save(); });
 app.on('window-all-closed', () => app.quit());

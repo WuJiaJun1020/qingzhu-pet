@@ -9,6 +9,7 @@
   font:500 14px/1.5 var(--ui-font);
   color:var(--ink);
 }
+#development-badge{font-size:11px;color:#ead29c;border:1px solid #8e805d;border-radius:4px;padding:1px 6px;margin-left:9px}
 
 * {
   box-sizing:border-box;
@@ -752,6 +753,9 @@ summary::marker {
 .scene.settings-closed .stage { right:8px; }
 .scene.panels-hidden .stage { left:8px; right:8px; }
 .window-tools button { width:100%; font-size:12px; }
+.window-tools { display:flex; flex-direction:column; gap:8px; }
+.window-tools .muted { margin:0; line-height:1.5; }
+.window-tools progress { width:100%; }
 @media(max-width:1000px) {
   .scene { --rack-width:220px; --drawer-width:252px; --side-space:16px; }
   .stage { top:64px; }

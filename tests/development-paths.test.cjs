@@ -4,6 +4,8 @@ const {characterDirectory,isPackagedRuntime}=require('../app/development-paths.c
 test('development uses the configured pack directory; releases and isolated tests ignore it',t=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'qingzhu-dev-path-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   const data=path.join(root,'data'),shared=path.join(root,'shared');fs.mkdirSync(shared);fs.writeFileSync(path.join(shared,'index.json'),'{}');
+  fs.writeFileSync(path.join(root,'.local-config.json'),JSON.stringify({sourceRoot:root}));
+  assert.equal(characterDirectory({root,data}),path.join(data,'characters'));
   fs.writeFileSync(path.join(root,'.local-config.json'),JSON.stringify({charactersDirectory:shared}));
   assert.equal(characterDirectory({root,data}),shared);
   assert.equal(characterDirectory({root,data,packaged:true}),path.join(data,'characters'));

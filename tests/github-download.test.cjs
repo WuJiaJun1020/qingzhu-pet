@@ -21,3 +21,8 @@ test('API limit falls back to the public URL; unrelated asset endpoints are reje
   const unsafe=createGitHubDownload(async()=>({ok:true,json:async()=>({assets:[{name:'other.qzpet',url:'https://example.com/123'}]})}));
   await assert.rejects(()=>unsafe(url),/接口不合法/);
 });
+
+test('a newly published file refreshes cached assets on a fixed release',async()=>{
+ let calls=0;const download=createGitHubDownload(async u=>{if(u.includes('/tags/')){calls++;return {ok:true,json:async()=>({assets:[{name:'other.qzpet',url:'https://api.github.com/repos/WuJiaJun1020/qingzhu-pet/releases/assets/1'},...(calls>1?[{name:'new.qzpet',url:'https://api.github.com/repos/WuJiaJun1020/qingzhu-pet/releases/assets/2'}]:[])]})};}return new Response(u);});
+ await download(url);assert.match(await (await download(url.replace('other.qzpet','new.qzpet'))).text(),/assets\/2$/);assert.equal(calls,2);
+});

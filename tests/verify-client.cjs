@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,snapshot,root,data,onDragMove,movePet,charactersDirectory,sourceCharactersDirectory,showEditor,getEditor,getPetMenu})=>{
+module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,snapshot,root,data,onDragMove,movePet,charactersDirectory,sourceCharactersDirectory,showEditor,getEditor,getPetMenu,getPublisher})=>{
   const out=path.join(root,'tests/results'),checks=[],errors=[];
   const runtime={appPath:app.getAppPath(),electronIsPackaged:app.isPackaged,data,charactersDirectory,sourceCharactersDirectory};
   const js=code=>player.webContents.executeJavaScript(code),ui=code=>panel.webContents.executeJavaScript(code);
@@ -13,6 +13,14 @@ module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,sn
   try{
     panel.setMinimizable(false);panel.setClosable(false);
     await wait(()=>Promise.resolve(surface.hosted));await wait(async()=>await rendered()>1);
+    if(process.argv.includes('--verify-installed')){
+      await require('./verify-updates.cjs')({panel,snapshot,data,out,checks});
+      fs.writeFileSync(path.join(out,'当前客户端验收.json'),JSON.stringify({passed:true,runtime,checks},null,2));panel.setClosable(true);app.quit();return;
+    }
+    if(process.argv.includes('--publisher-check')){
+      await require('./verify-publisher.cjs')({panel,getPublisher,root,checks});
+      fs.writeFileSync(path.join(out,'当前客户端验收.json'),JSON.stringify({passed:true,runtime,checks},null,2));panel.setClosable(true);app.quit();return;
+    }
     await require('./verify-panel.cjs')({panel,player,snapshot,out,checks});
     assert.equal(pet.isVisible(),false);assert.equal(panel.contentView.children.includes(player),true);
     assert.ok(snapshot().characters.length>8,'当前客户端应加载数据目录中的人物');
@@ -28,8 +36,9 @@ module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,sn
     await ui("document.getElementById('reset-window').click()");await pause(160);assert.ok(Math.abs(panel.getSize()[0]-900)<=2&&Math.abs(panel.getSize()[1]-600)<=2,JSON.stringify(panel.getSize()));
     panel.setSize(1100,720);await pause(120);await ui("document.getElementById('reset-window').click()");await pause(200);assert.ok(Math.abs(panel.getSize()[0]-900)<=2&&Math.abs(panel.getSize()[1]-600)<=2,JSON.stringify(panel.getSize()));
     checks.push('窗口放大后可重置为 900 × 600');
-    const narrow={...surface.region};
     const panelBounds=()=>ui(`(()=>{const r=document.querySelector('.rack').getBoundingClientRect(),d=document.querySelector('.drawer').getBoundingClientRect();return {rackRight:r.right,drawerLeft:d.left};})()`);
+    await wait(async()=>{const p=await panelBounds(),r=surface.region;return r.x>=p.rackRight&&r.x+r.width<=p.drawerLeft;});
+    const narrow={...surface.region};
     const occupied=await panelBounds();assert.ok(narrow.x>=occupied.rackRight&&narrow.x+narrow.width<=occupied.drawerLeft);
     await ui("document.getElementById('close-settings').click()");await wait(()=>Promise.resolve(surface.region.width>narrow.width+100));
     const withoutSettings=surface.region.width;
@@ -183,8 +192,9 @@ module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,sn
     const native=sources.find(source=>source.id===panel.getMediaSourceId());
     if(native)fs.writeFileSync(path.join(out,'当前客户端-完整窗口.png'),native.thumbnail.toPNG());
     await require('./verify-repair.cjs')({app,panel,player,showEditor,getEditor,update,snapshot,root,data,charactersDirectory,sourceCharactersDirectory,checks});
+    await require('./verify-publisher.cjs')({panel,getPublisher,root,checks});
     await require('./verify-remove.cjs')({panel,player,update,snapshot,charactersDirectory,sourceCharactersDirectory,root,checks});
     assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'当前客户端验收.json'),JSON.stringify({passed:true,runtime,checks},null,2));console.log(JSON.stringify({passed:true,runtime,checks}));
   }catch(error){console.error(error);try{fs.writeFileSync(path.join(out,'当前客户端-失败现场.png'),(await Promise.race([panel.webContents.capturePage(),pause(1500).then(()=>{throw Error('失败截图超时');})])).toPNG());}catch{}fs.writeFileSync(path.join(out,'当前客户端验收.json'),JSON.stringify({passed:false,runtime,checks,error:error.stack,errors},null,2));console.error(error);app.exit(1);return;}
-  app.quit();
+  panel.setClosable(true);app.quit();
 };

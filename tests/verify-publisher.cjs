@@ -1,0 +1,23 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+module.exports=async({panel,getPublisher,root,checks})=>{
+ const ui=code=>panel.webContents.executeJavaScript(code);
+ assert.equal(await ui("document.getElementById('development-badge').hidden"),false);
+ assert.equal(await ui("document.getElementById('development-badge').textContent"),'本地开发版');
+ assert.equal(await ui("document.getElementById('publish-characters').hidden"),false);
+ await ui('window.petAPI.openPublisher()');const win=getPublisher();assert.ok(win&&!win.isDestroyed());
+ const js=code=>win.webContents.executeJavaScript(code);
+ assert.equal((await js('window.publisherAPI.context()')).dryRun,true);
+ await js("document.getElementById('scan').click()");
+ const wait=async predicate=>{for(let i=0;i<2400;i++){if(await predicate())return;await new Promise(r=>setTimeout(r,25));}throw Error('发布窗口验收超时：'+await js("document.getElementById('status').textContent"));};
+ await wait(()=>js("!document.getElementById('scan').disabled"));
+ assert.ok(await js("document.querySelectorAll('#rows input:checked').length>0"),'复制的已修补资源应有变更');
+ await js("(()=>{const inputs=[...document.querySelectorAll('#rows input:checked')];inputs.slice(1).forEach(i=>i.checked=false);document.getElementById('prepare').click();})()");
+ await wait(()=>js("!document.getElementById('prepare').disabled"));
+ assert.equal(await js("document.getElementById('preview').hidden"),false);
+ assert.equal(await js("document.querySelectorAll('#summary p').length"),1);
+ fs.writeFileSync(path.join(root,'tests/results/人物发布-预览.png'),(await win.webContents.capturePage()).toPNG());
+ await js("document.getElementById('publish').click()");await wait(()=>js("!document.getElementById('publish').disabled"));
+ assert.match(await js("document.getElementById('status').textContent"),/禁止向 GitHub 发布/);
+ win.close();checks.push('开发版顶栏标记与发布入口可见；独立窗口扫描复制资源、单人物打包预览成功；验收模式阻止真实发布');
+};

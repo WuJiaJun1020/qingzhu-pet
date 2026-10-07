@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; style-src 'self'">
+<title>人物发布 · 本地开发版</title><link rel="stylesheet" href="publisher.css"></head>
+<body><header><div><small>本地开发版 · 资源发布</small><h1>发布人物更新</h1></div><button id="scan">扫描变更</button></header>
+<p class="muted">更新或新增人物统一放入最新版资源页，被替换的旧包自动归档。</p>
+<details><summary>当前资源目录</summary><p id="directory"></p></details>
+<p id="status" role="status">点击「扫描变更」，与 GitHub 当前清单比较。</p>
+<div id="rows"></div><p id="empty" hidden>没有待发布的人物修改。</p>
+<footer><button id="prepare" disabled>准备发布预览</button></footer>
+<section id="preview" hidden><h2>确认本次更新</h2><div id="summary"></div><p>确认后更新最新版资源页、下载清单和 README。旧包归档后，原下载地址和计数不再保留。</p><button id="publish">确认发布到 GitHub</button><button id="cancel">返回选择</button></section>
+<p id="result" role="status"></p><script src="publisher.js"></script></body></html>

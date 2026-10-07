@@ -17,13 +17,17 @@ try {
   for(const file of fs.readdirSync(path.join(root,'app'),{withFileTypes:true})){
     if(file.isFile()&&!['package.json','package-lock.json','pnpm-lock.yaml'].includes(file.name))compare('app/'+file.name);
   }
-  for(const file of ['tests/verify-client.cjs','tests/verify-panel.cjs','tests/verify-repair.cjs','tests/verify-remove.cjs','tests/verify-memory.cjs','tests/client-fixtures.cjs','assets/manifest.json'])compare(file);
+  for(const file of ['tests/verify-client.cjs','tests/verify-panel.cjs','tests/verify-repair.cjs','tests/verify-remove.cjs','tests/verify-publisher.cjs','tests/verify-memory.cjs','tests/client-fixtures.cjs','assets/manifest.json'])compare(file);
+  for(const file of fs.readdirSync(path.join(root,'developer')))compare('developer/'+file);
+  for(const file of ['tests/update-fixture.cjs','tests/verify-updates.cjs'])compare(file);
   const reportFile=path.join(client,'tests/results/当前客户端验收.json');
   fs.mkdirSync(path.dirname(reportFile),{recursive:true});
   fs.rmSync(reportFile,{force:true});
   const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
   console.log('验收当前客户端：'+executable);
-  const result=spawnSync(executable,[appPath,'--verify-client'],{cwd:client,env,windowsHide:true,stdio:'inherit',timeout:120000});
+  const args=[appPath,'--verify-client'];if(process.argv.includes('--publisher'))args.push('--publisher-check');
+  if(process.argv.includes('--updates'))args.push('--verify-installed');
+  const result=spawnSync(executable,args,{cwd:client,env,windowsHide:true,stdio:'inherit',timeout:180000});
   if(result.error)throw result.error;
   assert.equal(result.status,0,'当前客户端验收进程失败');
   assert.ok(fs.existsSync(reportFile),'客户端未生成本次验收报告');

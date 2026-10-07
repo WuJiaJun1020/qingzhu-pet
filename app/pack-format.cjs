@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto');
 const {createCharacterCatalog}=require('./characters.cjs');
+const {validVersion}=require('./versions.cjs');
 const MAGIC=Buffer.from('QZPET1\n'),MAX_BYTES=512*1024*1024,MAX_HEADER=4*1024*1024;
 const validId=id=>typeof id==='string'&&/^[a-z][a-z0-9-]{0,63}$/.test(id);
 function relativeFile(name){
@@ -23,6 +24,8 @@ function imageSize(bytes){
 function validateHeader(header){
   if(header?.format!=='qingzhu-character-v1'||!validId(header.id)||!Array.isArray(header.files)||!header.files.length||header.files.length>20000)throw new Error('人物包格式不正确');
   const m=header.manifest;
+  if(m?.version!==3)throw new Error('人物包需要较新的软件版本，请先更新软件');
+  if(m.minAppVersion!==undefined&&!validVersion(m.minAppVersion))throw new Error('人物包最低软件版本不合法');
   if(m?.frameVariant!=='cleaned-v1'||m.characters?.length!==1||m.characters[0].id!==header.id||m.defaultCharacter!==header.id)throw new Error('人物包不是净化版或人物编号不一致');
   createCharacterCatalog(m);
   const files=new Map();let total=0;

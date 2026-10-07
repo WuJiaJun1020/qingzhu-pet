@@ -52,7 +52,12 @@ function renderSelection(){
   // Only installed animation resources may appear on the stage.
   if(previewVisible!==p.installed){previewVisible=p.installed;run(api.previewVisible(previewVisible));}
   const busy=['downloading','verifying','installing'].includes(state.packs.transfer.status);
-  $('invite').textContent=p.installed?'邀至桌面':'安装人物';$('invite').disabled=busy||removing;
+  $('update-character').hidden=!p.updateAvailable;
+  $('update-character').textContent=(state.development?'拉取 GitHub「':'更新「')+p.name+'」';
+  $('update-character').disabled=busy||removing||p.compatible===false;
+  if(p.compatible===false)$('update-character').textContent='请先更新软件';
+  $('invite').textContent=p.installed?'邀至桌面':'安装人物';$('invite').disabled=busy||removing||(!p.installed&&p.compatible===false);
+  if(!p.installed&&p.compatible===false)$('invite').textContent='请先更新软件';
   $('pack-remove').hidden=!p.removable;$('pack-remove').disabled=busy||removing;
   if(removeTarget&&removeTarget!==selected&&!removing){removeTarget='';$('remove-confirm').hidden=true;}
 }
@@ -62,7 +67,24 @@ function progress(frame){
   $('frame').textContent=`${frame+1} / ${state.animation.frames.length}`;
   $('time').textContent=(state.animation.frames.slice(0,frame).reduce((sum,f)=>sum+f.durationMs,0)/1000).toFixed(2)+' s';
 }
+function renderUpdates(info){
+  if(!info)return;
+  $('auto-character-updates').checked=info.preferences.autoCharacters;$('auto-character-updates').disabled=!info.installed;
+  $('auto-software-updates').checked=info.preferences.autoSoftware;$('auto-software-updates').disabled=!info.installed;
+  $('update-status').textContent=info.characters.message||(!info.installed?'开发版保留本地帧，更新需手动选择。':'新增人物按需安装，已有动作随人物包更新。');
+  $('check-character-updates').disabled=['checking','updating'].includes(info.characters.status);
+  const software=info.software,busy=['checking','downloading'].includes(software.status);
+  $('software-version').textContent=info.installed?'当前版本 v'+software.version:'本地开发版';
+  $('software-status').textContent=software.message||(!info.installed?'安装版支持下载并安装软件更新。':'');
+  $('check-software-updates').disabled=busy||!info.installed;
+  $('download-software').hidden=!info.installed||!software.availableVersion||software.status==='ready'||software.status==='downloading';
+  $('download-software').disabled=busy;$('download-software').textContent='下载 v'+software.availableVersion;
+  $('install-software').hidden=software.status!=='ready';$('cancel-software').hidden=software.status!=='downloading';
+  $('software-progress').hidden=software.status!=='downloading';$('software-progress').value=software.total?software.received/software.total*100:0;
+}
 function accept(s){
+  renderUpdates(s.updates);
+  if(typeof s.development==='boolean'){$('development-badge').hidden=!s.development;$('publish-characters').hidden=!s.development;}
   const first=!state,previous=state?.character.id||savedPanel.activeCharacter;state=s;
   if(!selected||previous!==s.character.id||!entries().some(p=>p.id===selected))selected=s.character.id;
   renderGallery();renderSelection();
@@ -116,6 +138,15 @@ $('seek').onchange=$('seek').onpointercancel=()=>{scrubbing=false;};
 $('prev').onclick=()=>change({frame:current-1,playing:false});$('next').onclick=()=>change({frame:current+1,playing:false});
 $('reset-window').onclick=()=>run(api.resetPanelSize());
 $('edit-frame').onclick=()=>run(api.frameEditor.open());
+$('publish-characters').onclick=()=>run(api.openPublisher());
+$('check-character-updates').onclick=()=>run(api.checkCharacterUpdates().then(accept));
+$('auto-character-updates').onchange=()=>run(api.updatePreferences({autoCharacters:$('auto-character-updates').checked}).then(accept));
+$('auto-software-updates').onchange=()=>run(api.updatePreferences({autoSoftware:$('auto-software-updates').checked}).then(accept));
+$('check-software-updates').onclick=()=>run(api.checkSoftware().then(accept));
+$('download-software').onclick=()=>run(api.downloadSoftware().then(accept));
+$('install-software').onclick=()=>run(api.installSoftware());
+$('cancel-software').onclick=()=>run(api.cancelSoftware());
+$('update-character').onclick=()=>run(api.updateCharacter(selected).then(accept));
 if(savedPanel.settingsOpen===false)settings(false);
 if(savedPanel.panelsHidden)$('toggle-panels').click();
 $('inspection').open=Boolean(savedPanel.inspection);

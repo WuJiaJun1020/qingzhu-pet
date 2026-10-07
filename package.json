@@ -1,6 +1,6 @@
 {
   "name": "qingzhu-pet",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "青竹桌宠：桌面角色动画、交互测试与透明素材处理工具",
   "main": "app/main.cjs",
@@ -14,7 +14,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/model.test.cjs tests/characters.test.cjs tests/drag.test.cjs tests/drag-animation.test.cjs tests/wave-assets.test.cjs tests/assets.test.cjs tests/character-packs.test.cjs tests/github-download.test.cjs tests/frame-writer.test.cjs tests/frame-brush.test.cjs tests/panel-window.test.cjs tests/shared-surface.test.cjs tests/development-paths.test.cjs",
+    "test": "node --test tests/model.test.cjs tests/characters.test.cjs tests/drag.test.cjs tests/drag-animation.test.cjs tests/wave-assets.test.cjs tests/assets.test.cjs tests/character-packs.test.cjs tests/github-download.test.cjs tests/frame-writer.test.cjs tests/frame-brush.test.cjs tests/panel-window.test.cjs tests/shared-surface.test.cjs tests/development-paths.test.cjs tests/publisher.test.cjs tests/updates.test.cjs",
     "verify": "node tests/run-client.cjs",
     "test:python": "python -m unittest discover -s tests -p *_test.py",
     "optimize:assets": "python 处理工具/optimize_assets.py",
@@ -66,7 +66,7 @@
     "nsis": {
       "oneClick": false,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "青竹桌宠",
@@ -76,10 +76,7 @@
         "zh_CN"
       ],
       "language": "2052",
-      "include": "build/installer.nsh",
-      "installerHeader": "build/installerHeader.bmp",
-      "installerSidebar": "build/installerSidebar.bmp",
-      "uninstallerSidebar": "build/installerSidebar.bmp"
+      "include": "build/installer.nsh"
     }
   }
 }
