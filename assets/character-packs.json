@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "releaseTag": "characters-20261005",
+  "releaseTag": "characters-20261007-091026-c22597",
   "packs": [
     {
       "id": "hanli",
@@ -134,9 +134,9 @@
     {
       "id": "mupeiling",
       "name": "慕沛灵",
-      "sha256": "912ded93d2fbd09ea7945c5877c4a2bd5fa9c142f81b777159c27cd7944bcac6",
-      "bytes": 18609351,
-      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/mupeiling-912ded93d2fb.qzpet",
+      "sha256": "cb8a48493045176495a44d213f34c8eeae1ea96a32089a5ce4373eb4ff9bff65",
+      "bytes": 18606521,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261007-091026-c22597/mupeiling-cb8a48493045.qzpet",
       "actions": [
         {
           "id": "mupeiling-idle",
@@ -200,9 +200,9 @@
     {
       "id": "yinyue",
       "name": "银月",
-      "sha256": "a0384fa6a18a67dacf26b4be3ee01c772bf1fc49d7da0dd8f116a11069a2e537",
-      "bytes": 17742936,
-      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/yinyue-a0384fa6a18a.qzpet",
+      "sha256": "416079de35a31a305e1fdc66b5a5a68b26f073f2e51d960d01af16b64377e270",
+      "bytes": 17741956,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261007-091026-c22597/yinyue-416079de35a3.qzpet",
       "actions": [
         {
           "id": "yinyue-idle",
@@ -266,9 +266,9 @@
     {
       "id": "ziling",
       "name": "紫灵",
-      "sha256": "2b95082436685d856482f14529d6bea6312209ed11dd062b0e4ee8f06b9b37b0",
-      "bytes": 16667154,
-      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261005/ziling-2b9508243668.qzpet",
+      "sha256": "fc2519c058d038e202e86153feed83958d5cfb40ef74631b0f60e4d2645c8414",
+      "bytes": 16663310,
+      "url": "https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/characters-20261007-091026-c22597/ziling-fc2519c058d0.qzpet",
       "actions": [
         {
           "id": "ziling-idle",
