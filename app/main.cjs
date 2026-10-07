@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, BaseWindow, WebContentsView, ipcMain, screen, Tray, Menu, nativeImage, net, dialog } = require('electron');
+const { app, BrowserWindow, BaseWindow, WebContentsView, ipcMain, screen, Tray, Menu, nativeImage, net, dialog, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -79,6 +79,10 @@ function installedLibrary(){
   dragAnimations=createDragAnimationController(actions,character.interactions);
   settings=configure(settings,{},actions);
   revision++;resizePet();broadcast();save();return snapshot();
+}
+function playInstalledCharacter(id){
+  installedLibrary();
+  return update({character:id,action:idleAction(catalog.get(id).actions).id,frame:0,visible:true,autoPlay:true,playing:true});
 }
 const settingsFile = path.join(data, 'settings.json');
 try {
@@ -161,7 +165,10 @@ function enterPanel() {
 }
 function leavePanel() {
   if(!surface?.hosted)return;
-  endDrag();surface.detach();resizePet();settings.visible=true;pet.showInactive();broadcast();save();
+  endDrag();const preferences=dragAnimations.cancel();if(preferences)settings={...settings,...preferences};
+  surface.detach();resizePet();
+  if(!settings.autoPlay||!settings.playing)update({visible:true,autoPlay:true,playing:true,action:idleAction(actions).id,frame:0});
+  else{settings.visible=true;pet.showInactive();broadcast();save();}
 }
 // Experimental desktop memory mode: keep the player alive, unload only the
 // hidden gallery after a grace period. Quick round trips need no page reload.
@@ -344,9 +351,20 @@ else {
       const previous=character.id;if(previous===id)update({character:catalog.defaultId});
       try{await packs.remove(id);return installedLibrary();}catch(error){if(previous===id)update({character:previous});throw error;}
     });
+    handle('manual-download',async(event,id)=>{
+      if(event.sender!==panel.webContents)throw Error('请从设置面板打开下载页');
+      let url='https://github.com/WuJiaJun1020/qingzhu-pet/releases/latest';
+      if(id!==null){
+        const entry=packs.list().entries.find(p=>p.id===id);
+        if(!entry?.url||!/^https:\/\/github\.com\/WuJiaJun1020\/qingzhu-pet\/releases\/download\/[^/]+\/[^/]+$/.test(entry.url))throw Error('人物下载地址不合法');
+        url=entry.url;
+      }
+      if(verifying)return url;
+      await shell.openExternal(url);return url;
+    });
     handle('pack-install', async (event,id)=>{
       if(event.sender!==panel.webContents)throw new Error('请从设置面板安装人物');
-      if(frameWriter.busy)throw Error('正在保存修补，请稍候');await packs.install(id);return installedLibrary();
+      if(frameWriter.busy)throw Error('正在保存修补，请稍候');await packs.install(id);return playInstalledCharacter(id);
     });
     handle('pack-import', async event=>{
       if(event.sender!==panel.webContents)throw new Error('请从设置面板导入人物');
@@ -355,7 +373,7 @@ else {
       try {
         const selected=await dialog.showOpenDialog(panel,{title:'导入人物资源包',properties:['openFile'],filters:[{name:'青竹桌宠人物包',extensions:['qzpet']}]});
         if(selected.canceled)return snapshot();
-        await packs.importFile(selected.filePaths[0]);return installedLibrary();
+        const id=await packs.importFile(selected.filePaths[0]);return playInstalledCharacter(id);
       } finally {panelImporting=false;}
     });
     handle('pack-cancel',()=>updates.cancelCharacters());

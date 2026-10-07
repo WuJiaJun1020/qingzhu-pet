@@ -84,14 +84,15 @@ function createPackManager({root,data,charactersDirectory=path.join(data,'charac
     if(builtinIds.has(id)&&!allowBuiltinUpdates&&library.installed.get(id)!==p.sha256)throw Error('开发版不覆盖内置人物');
     const installed=library.installed;
     if(installed.get(id)===p.sha256&&(!inspectInstalled||inspected.get(id)?.sha256===p.sha256))return id;
-    busy=true;controller=new AbortController();emit({id,status:localFile?'verifying':'downloading',received:0,total:p.bytes,message:localFile?'正在读取人物包':'正在下载人物包'});
+    busy=true;controller=new AbortController();emit({id,manualDownload:false,status:localFile?'verifying':'downloading',received:0,total:p.bytes,message:localFile?'正在读取人物包':'正在下载人物包'});
     let temporary=null,failure=null;
     try{
       if(localFile)return await commit(localFile,p);
       const folder=path.join(data,'downloads');await fsp.mkdir(folder,{recursive:true});temporary=inside(folder,crypto.randomUUID()+'.partial');
-      const response=await fetch(p.url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)]),cache:'no-store'});
+      const response=await fetch(p.url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)]),cache:'no-store',onRetry:({message})=>emit({message})});
       if(!response.ok)throw new Error(response.status===404?'人物包尚未发布，请稍后重试或从文件导入':`下载失败（HTTP ${response.status}）`);
       if(!response.body)throw new Error('下载响应没有内容');
+      emit({message:'正在下载人物包'});
       const handle=await fsp.open(temporary,'wx');let received=0,last=0;
       try{
         for await(const chunk of response.body){
@@ -103,7 +104,12 @@ function createPackManager({root,data,charactersDirectory=path.join(data,'charac
       }finally{await handle.close();}
       if(received!==p.bytes)throw new Error('下载中断或文件不完整，请重试');
       return await commit(temporary,p);
-    }catch(error){failure=controller.signal.aborted?'下载已取消':error.message;throw new Error(failure);}
+    }catch(error){
+      const manualDownload=!localFile&&!controller.signal.aborted&&transfer.status==='downloading';
+      failure=controller.signal.aborted?'下载已取消':error.message;
+      if(manualDownload)failure+='。请手动下载「'+p.name+'」的 .qzpet 文件，再点击“导入人物包”。';
+      emit({manualDownload});throw new Error(failure);
+    }
     finally{
       if(temporary)await fsp.rm(temporary,{force:true});busy=false;controller=null;
       emit(failure?{status:'error',message:failure}:{status:'idle',message:`${p.name}已安装`,received:p.bytes,total:p.bytes});

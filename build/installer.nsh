@@ -173,6 +173,9 @@ Function QzValidate
 FunctionEnd
 
 Function QzProgress
+  ; MUI_PAGE_FINISH normally enables this in GUIINIT. Our custom finish page
+  ; replaces that macro, so explicitly leave InstFiles when its section ends.
+  SetAutoClose true
   Call QzShell
   FindWindow $QzPage "#32770" "" $HWNDPARENT
   !insertmacro QzPlace $QzPage 36 74 478 200
@@ -197,6 +200,11 @@ FunctionEnd
 Function QzFinish
   Call QzCreatePage
   !insertmacro QzLabel 38 98 360 32 "安装完成" 465B50 $QzFont
+  ${NSD_CreateButton} 0 0 1 1 "完成"
+  Pop $QzControl
+  !insertmacro QzPlace $QzControl 248 254 96 40
+  SendMessage $QzControl ${WM_SETFONT} $QzFont 1
+  ${NSD_OnClick} $QzControl QzAdvance
   ${NSD_CreateButton} 0 0 1 1 "打开青竹桌宠"
   Pop $QzButton
   !insertmacro QzPlace $QzButton 358 254 156 40

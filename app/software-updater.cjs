@@ -65,14 +65,15 @@ function createSoftwareUpdater({data,version,installed,fetch,downloadFetch=fetch
   const next={...candidate},folder=path.join(data,'software-updates'),target=path.join(folder,next.name);await fs.mkdir(folder,{recursive:true});
   const temporary=target+'.'+crypto.randomUUID()+'.partial';controller=new AbortController();
   try{
-   emit({status:'downloading',received:0,total:next.bytes,message:'正在下载安装包…'});
-   const response=await downloadFetch(next.url,{cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)])});if(!response.ok)throw Error('安装包下载失败（HTTP '+response.status+'）');
+   emit({status:'downloading',manualDownload:false,received:0,total:next.bytes,message:'正在下载安装包…'});
+   const response=await downloadFetch(next.url,{cache:'no-store',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20*60*1000)]),onRetry:({message})=>emit({message})});if(!response.ok)throw Error('安装包下载失败（HTTP '+response.status+'）');
+   emit({message:'正在下载安装包…'});
    const handle=await fs.open(temporary,'wx');let size=0,last=0;const digest=crypto.createHash('sha256');
    try{for await(const chunk of response.body){if(controller.signal.aborted)throw Error('下载已取消');size+=chunk.byteLength;if(size>next.bytes)throw Error('安装包大小超过清单');digest.update(chunk);await handle.writeFile(chunk);if(Date.now()-last>200){emit({received:size});last=Date.now();}}}finally{await handle.close();}
    if(size!==next.bytes||digest.digest('hex')!==next.sha256)throw Error('安装包校验失败，请重新下载');
    const handle2=await fs.open(temporary);try{const signature=Buffer.alloc(2);await handle2.read(signature,0,2,0);if(signature.toString()!=='MZ')throw Error('下载文件不是 Windows 安装程序');}finally{await handle2.close();}
    await renameWithRetry(temporary,target);ready={...next,file:target};emit({status:'ready',received:size,message:'下载完成，可退出并安装。'});
-  }catch(error){emit({status:'error',message:controller.signal.aborted?'下载已取消':error.message});throw error;}finally{controller=null;await fs.rm(temporary,{force:true});}
+  }catch(error){const message=controller.signal.aborted?'下载已取消':error.message+'。请前往 GitHub 手动下载最新版安装包。';emit({status:'error',manualDownload:!controller.signal.aborted,message});throw Error(message);}finally{controller=null;await fs.rm(temporary,{force:true});}
  });}
  async function prepareInstall(){
   if(!installed||!ready||busy)throw Error('安装包尚未就绪');

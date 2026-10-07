@@ -2,7 +2,7 @@
 
 Windows 桌面小伙伴，支持 26 位人物、109 套动画。默认内置韩立，其他人物按需安装。
 
-**[下载安装包 v0.3.1](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/v0.3.1/qingzhu-pet-0.3.1-windows-x64-setup.exe)** · [版本说明与校验](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.1)
+**[下载安装包 v0.3.2](https://github.com/WuJiaJun1020/qingzhu-pet/releases/download/v0.3.2/qingzhu-pet-0.3.2-windows-x64-setup.exe)** · [版本说明与校验](https://github.com/WuJiaJun1020/qingzhu-pet/releases/tag/v0.3.2)
 
 Windows 10 / 11 x64，可选安装路径，无需额外运行环境。安装包未签名，可能提示未知发布者。
 

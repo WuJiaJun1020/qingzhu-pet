@@ -10,7 +10,7 @@ filter=['all','installed','available'].includes(savedPanel.filter)?savedPanel.fi
 $('search').value=savedPanel.search||'';
 for(const button of document.querySelectorAll('[data-filter]'))button.setAttribute('aria-pressed',String(button.dataset.filter===filter));
 window.addEventListener('pagehide',()=>sessionStorage.setItem('panel-view',JSON.stringify({selected,activeCharacter:state?.character.id,filter,search:$('search').value,scroll:$('portraits').scrollTop,drawerScroll:document.querySelector('.drawer-content').scrollTop,settingsOpen:!$('settings-drawer').hidden,panelsHidden:scene.classList.contains('panels-hidden'),inspection:$('inspection').open})));
-function report(error){$('error-message').textContent=error.message||String(error);$('error').hidden=false;}
+function report(error){$('error-message').textContent=(error.message||String(error)).replace(/^Error invoking remote method '[^']+': (?:Error: )?/,'');$('error').hidden=false;}
 const run=promise=>promise.catch(report);
 const change=patch=>run(api.configure(patch));
 const portraitUrl=id=>new URL('../assets/shop/portraits/'+encodeURIComponent(id)+'.webp',location.href).href;
@@ -81,6 +81,7 @@ function renderUpdates(info){
   $('download-software').disabled=busy;$('download-software').textContent='下载 v'+software.availableVersion;
   $('install-software').hidden=software.status!=='ready';$('cancel-software').hidden=software.status!=='downloading';
   $('software-progress').hidden=software.status!=='downloading';$('software-progress').value=software.total?software.received/software.total*100:0;
+  $('manual-software').hidden=software.status!=='error'||!software.manualDownload;
 }
 function accept(s){
   renderUpdates(s.updates);
@@ -102,6 +103,8 @@ function accept(s){
   const t=s.packs.transfer,busy=['downloading','verifying','installing'].includes(t.status);
   $('pack-import').disabled=busy;$('transfer').hidden=!busy;$('pack-cancel').hidden=t.status!=='downloading';
   $('transfer-message').textContent=t.message||'正在安装';$('transfer-progress').value=t.total?Math.min(100,t.received/t.total*100):0;
+  $('manual-character').hidden=t.status!=='error'||!t.manualDownload;
+  $('manual-character').textContent='手动下载「'+(entries().find(p=>p.id===t.id)?.name||'人物包')+'」';
   if(t.status==='error')report(new Error(t.message));
   if(s.packs.warnings.length)report(new Error(s.packs.warnings.join('；')));
   progress(s.settings.frame);window.PetSelect.sync();
@@ -121,6 +124,8 @@ $('remove-cancel').onclick=()=>{removeTarget='';$('remove-confirm').hidden=true;
 $('remove-confirm').onkeydown=e=>{if(e.key==='Escape'&&!removing){e.preventDefault();$('remove-cancel').click();}};
 $('remove-accept').onclick=()=>{if(!removeTarget||removing)return;removing=true;$('remove-accept').disabled=true;$('remove-cancel').disabled=true;$('error').hidden=true;run(api.removeCharacter(removeTarget).then(accept).finally(()=>{removing=false;removeTarget='';$('remove-confirm').hidden=true;$('remove-accept').disabled=false;$('remove-cancel').disabled=false;renderSelection();}));};
 $('pack-cancel').onclick=()=>run(api.cancelDownload());
+$('manual-character').onclick=()=>run(api.manualDownload(state.packs.transfer.id));
+$('manual-software').onclick=()=>run(api.manualDownload(null));
 $('dismiss-error').onclick=()=>{$('error').hidden=true;};
 function settings(open){$('settings-drawer').hidden=!open;scene.classList.toggle('settings-closed',!open);$('settings').setAttribute('aria-expanded',String(open));}
 $('settings').onclick=()=>settings($('settings-drawer').hidden);$('close-settings').onclick=()=>settings(false);

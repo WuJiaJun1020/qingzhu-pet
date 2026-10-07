@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('petAPI', {
   configure: patch => ipcRenderer.invoke('configure', patch),
   removeCharacter: id => ipcRenderer.invoke('pack-remove',id),
   installCharacter: id => ipcRenderer.invoke('pack-install',id),
+  manualDownload: id => ipcRenderer.invoke('manual-download',id),
   checkCharacterUpdates: () => ipcRenderer.invoke('pack-check-updates'),
   updateCharacter: id => ipcRenderer.invoke('pack-update',id),
   updatePreferences: patch => ipcRenderer.invoke('update-preferences',patch),

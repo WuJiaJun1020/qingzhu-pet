@@ -124,14 +124,15 @@ module.exports=async({app,pet,player,panel,surface,showPanel,hidePanel,update,sn
     const sentinel=await js('surfaceSentinel.id');
     for(let i=0;i<4;i++){
       update({autoPlay:false,playing:false,action:snapshot().idleId,frame:15});await wait(async()=>await rendered()===16);
-      const before=await js('document.getElementById("canvas").toDataURL()');
-      hidePanel();assert.equal(surface.hosted,false);assert.equal(pet.isVisible(),true);assert.equal(pet.contentView.children.includes(player),true);
-      assert.equal(await js('document.getElementById("canvas").toDataURL()'),before);
+      if(i%2){panel.setClosable(true);panel.close();panel.setClosable(false);}else await ui('document.getElementById("hide-panel").click()');
+      await wait(()=>Promise.resolve(!surface.hosted));assert.equal(pet.isVisible(),true);assert.equal(pet.contentView.children.includes(player),true);
+      assert.equal(snapshot().settings.autoPlay,true);assert.equal(snapshot().settings.playing,true);assert.equal(snapshot().settings.action,snapshot().idleId);
+      await wait(async()=>await rendered()>1);const resumed=await rendered();await pause(150);assert.notEqual(await rendered(),resumed,'回到桌面应恢复播放');
       showPanel();await wait(()=>Promise.resolve(surface.hosted));assert.equal(pet.isVisible(),false);
-      assert.equal(await js('document.getElementById("canvas").toDataURL()'),before);
+      assert.equal(snapshot().settings.autoPlay,true);assert.equal(snapshot().settings.playing,true);
       assert.equal(player.webContents.id,id);assert.equal(await js('surfaceSentinel.id'),sentinel);
     }
-    checks.push('连续四轮主窗口/桌面迁移：同一页面、同一画布像素、同一播放位置');
+    checks.push('收起和关闭主窗口连续四轮均从手动暂停恢复自动播放；再次打开保持自动播放，复用同一播放页面');
     await js('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     await js("document.documentElement.style.pointerEvents=''");await ui("document.documentElement.style.pointerEvents=''");
     const point=await js(`(()=>{const r=document.getElementById('canvas').getBoundingClientRect();for(let y=Math.max(2,Math.ceil(r.y+r.height*.2));y<Math.min(innerHeight-2,r.bottom-2);y++)for(let x=Math.max(2,Math.ceil(r.x+r.width*.25));x<Math.min(innerWidth-2,r.x+r.width*.75);x++){if([[-1,-1],[1,-1],[-1,1],[1,1],[0,0]].every(([dx,dy])=>window.hitTest(x+dx,y+dy)))return {x,y};}return null;})()`);
